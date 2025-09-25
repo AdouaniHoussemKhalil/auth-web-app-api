@@ -1,0 +1,32 @@
+{
+  "authentification": {
+    "SECRET_TOKEN": "your secret token",
+    "REFRESH_SECRET_TOKEN": "your refresh secret token",
+    "SECRET_RESET_PASSWORD_TOKEN":"your secret reset password token"
+  },
+  "db": {
+    "uri": "your mongodb uri"
+  },
+  "server": {
+    "port": 8080
+  },
+  "front": {
+    "url":"http://localhost:3000"
+  },
+  "email": {
+    "smtp": {
+      "port": 465,
+      "host": "smtp.gmail.com",
+      "secure": true,
+      "auth": {
+        "user": "your email",
+        "pass": "your email password"
+      }
+    },
+    "info": {
+      "from": "your email",
+      "subject": "Réinitialisation de votre mot de passe",
+      "image": "Image url" 
+    }
+  }
+}
