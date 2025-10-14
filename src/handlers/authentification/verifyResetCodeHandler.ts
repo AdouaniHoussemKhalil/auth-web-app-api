@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { comparePassword } from "../../utils/password";
+import { comparePassword } from "../../utils/hash";
 import { CustomError } from "../../middleware/error/errorHandler";
 import User from "../../models/User";
 import jwt, { Secret } from "jsonwebtoken";
@@ -27,7 +27,7 @@ const verifyResetCodeHandler = async (
       throw error;
     }
 
-    if (!user.resetPassword || !user.resetPassword.resetPasswordExpires) {
+    if (!user.secondaryUserAccess || !user.secondaryUserAccess.expires) {
       const error = new Error(
         "An error occurred with reset code"
       ) as CustomError;
@@ -36,17 +36,17 @@ const verifyResetCodeHandler = async (
       throw error;
     }
 
-    const { resetPasswordToken, resetPasswordExpires } = user.resetPassword;
+    const { code, expires } = user.secondaryUserAccess;
 
-    if (!(resetPasswordExpires instanceof Date)) {
+    if (!(expires instanceof Date)) {
       const error = new Error("invalid expiration date") as CustomError;
       error.status = 400;
       error.code = "invalidExpirationDate";
       throw error;
     }
 
-    if (Date.now() > resetPasswordExpires.getTime()) {
-      user.resetPassword = undefined;
+    if (Date.now() > expires.getTime()) {
+      user.secondaryUserAccess = undefined;
       await user.save();
       const error = new Error("Expired reset code") as CustomError;
       error.status = 400;
@@ -56,7 +56,7 @@ const verifyResetCodeHandler = async (
 
     const isResetCodeValid = await comparePassword(
       resetCode,
-      resetPasswordToken ?? ""
+      code ?? ""
     );
     if (!isResetCodeValid) {
       const error = new Error("Invalid reset code") as CustomError;
@@ -73,7 +73,7 @@ const verifyResetCodeHandler = async (
       expiresIn: "10m",
     });
 
-    user.resetPassword = undefined;
+    user.secondaryUserAccess = undefined;
     await user.save();
 
     return response.status(201).json({

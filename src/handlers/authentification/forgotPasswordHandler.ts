@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../middleware/error/errorHandler";
-import User from "../../models/User";
-import { generateResetCode } from "../../utils/generateToken";
+import User, { SecondaryUserAccessType } from "../../models/User";
+import { generateResetCode } from "../../utils/random";
 import { sendMailAsync } from "../../services/email/sendMails";
-import { Recipient } from "../../services/email/models/recipient";
-import { hash } from "../../utils/password";
-
+import { Recipient } from "../../services/email/models/Recipient";
+import { hash } from "../../utils/hash";
+import { EmailTemplateType } from "../../services/email/models/Template";
 
 const forgotPasswordHandler = async (
   request: Request,
@@ -13,6 +13,8 @@ const forgotPasswordHandler = async (
   next: NextFunction
 ) => {
   try {
+    const appClient = (request as any).appClient;
+
     const { email } = request.body;
 
     if (!email) {
@@ -34,20 +36,29 @@ const forgotPasswordHandler = async (
       fullName: `${user.firstName} ${user.lastName}`,
       email: user.email,
     };
-    await sendMailAsync(recipient, resetCode);
+    await sendMailAsync(
+      recipient,
+      EmailTemplateType.ForgotPassword,
+      {
+        appName: appClient.branding.appName,
+        logoUrl: appClient.branding.logoUrl,
+      },
+      resetCode
+    );
 
     const resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
     const resetPasswordToken = await hash(resetCode);
 
-    user.resetPassword = {
-      resetPasswordToken,
-      resetPasswordExpires
-    }
+    user.secondaryUserAccess = {
+      code: resetPasswordToken,
+      expires: resetPasswordExpires,
+      type: SecondaryUserAccessType.ForgotPassword,
+    };
     user.save();
     response.status(201).json({
-      message: 'Reset code sent to your email',
+      message: "Reset code sent to your email",
       resetPasswordToken,
-      isError: false
+      isError: false,
     });
   } catch (error) {
     next(error);

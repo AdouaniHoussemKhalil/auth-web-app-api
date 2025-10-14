@@ -1,22 +1,41 @@
 import { Router } from "express";
 import validate from "../middleware/validation/validateSchema";
-import { registerSchema } from "../schemas/registerSchema";
+import { registerSchema } from "../schemas/authentication/registerSchema";
 import { asyncHandler } from "../utils/asyncHandler";
 import registerUserHandler from "../handlers/authentification/registerUserHandler";
-import { loginSchema } from "../schemas/loginSchema";
+import { loginSchema } from "../schemas/authentication/loginSchema";
 import loginUserHandler from "../handlers/authentification/loginUserHandler";
-import { forgotPasswordSchema, verifyResetCodeSchema } from "../schemas/forgotPasswordSchema";
+import { forgotPasswordSchema, verifyResetCodeSchema } from "../schemas/authentication/forgotPasswordSchema";
 import forgotPasswordHandler from "../handlers/authentification/forgotPasswordHandler";
 import verifyResetCodeHandler from "../handlers/authentification/verifyResetCodeHandler";
-import { resetPasswordSchema } from "../schemas/resetPasswordSchema";
+import { resetPasswordSchema } from "../schemas/authentication/resetPasswordSchema";
 import resetPasswordHandler from "../handlers/authentification/resetPasswordHandler";
-import authenticateToken from "../middleware/security/authenticateToken";
-import { updateProfileSchema } from "../schemas/updateProfileSchema";
+import {authenticateToken} from "../middleware/security/authenticateToken";
+import { updateProfileSchema } from "../schemas/authentication/updateProfileSchema";
 import updateProfileHandler from "../handlers/authentification/updateProfileHandler";
 import updatePasswordHandler from "../handlers/authentification/updatePasswordHandler";
-import { updatePasswordSchema } from "../schemas/updatePasswordSchema";
+import { updatePasswordSchema } from "../schemas/authentication/updatePasswordSchema";
+import activateMFAHandler from "../handlers/authentification/activateMFAHandler";
+import loginByCodeMFAHandler from "../handlers/authentification/loginByCodeMFAHandler";
+import { loginByCodeMFASchema } from "../schemas/authentication/loginByCodeMFASchema";
+import { activatedMFASchema } from "../schemas/authentication/activatedMFASchema";
+import { deactivateMFASchema } from "../schemas/authentication/deactivateMFASchema";
+import deactivateMFAHandler from "../handlers/authentification/deactivateMFAHandler";
+import { requestMFASchema } from "../schemas/authentication/requestMFASchema";
+import MFARequestHandler from "../handlers/authentification/mfaRequestHandler";
+import { authenticateAppClient } from "../middleware/security/authenticateAppClient";
+import { AppClientSchema } from "../schemas/configuration/appClientSchema";
+import createAppClientHandler from "../handlers/configuration/createAppClientHandler";
 
 const authRoutes = Router();
+
+authRoutes.post(
+    "/createAppClient",
+    validate(AppClientSchema),
+    asyncHandler(createAppClientHandler)
+)
+
+authRoutes.use(authenticateAppClient);
 
 authRoutes.post(
     "/register",
@@ -62,4 +81,30 @@ authRoutes.put(
     asyncHandler(updatePasswordHandler)
 )
 
+authRoutes.post(
+    "/activateMFA",
+    validate(activatedMFASchema),
+    authenticateToken,
+    asyncHandler(activateMFAHandler)
+)
+
+authRoutes.post(
+    "/deactivateMFA",
+    validate(deactivateMFASchema),
+    authenticateToken,
+    asyncHandler(deactivateMFAHandler)
+)
+
+authRoutes.post(
+    "/loginByCodeMFA",
+    validate(loginByCodeMFASchema),
+    asyncHandler(loginByCodeMFAHandler)
+)
+
+authRoutes.post(
+    "/mfaRequest",
+    validate(requestMFASchema),
+    authenticateToken,
+    asyncHandler(MFARequestHandler)
+)
 export default authRoutes;

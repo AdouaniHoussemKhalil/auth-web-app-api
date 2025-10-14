@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../middleware/error/errorHandler";
 import User from "../../models/User";
-import { comparePassword, hashPassword } from "../../utils/password";
+import { comparePassword, hashPassword } from "../../utils/hash";
 
 const updatePasswordHandler = async (
   request: Request,
