@@ -1,49 +1,27 @@
-Auth API
+🧩 Auth API — Multi-Application Authentication Service
 
-Auth API is a Node.js + TypeScript application providing the back-end for a full authentication system. It supports login, registration, password reset, and profile management, following modern architecture and best practices.
+Auth API is a reusable authentication service built with Node.js + TypeScript.
+It can be integrated with multiple client applications (web, mobile, back-end services, etc.) by registering each application as an App Client.
+Each App Client receives unique credentials (appId, appSecret) to securely interact with the API.
 
-Features
+🚀 Features
 
-Authentication – Login, registration, JWT-based authentication, and token management.
+Multi-App Architecture – Each external app must create an AppClient to obtain its own appId and appSecret.
 
-Password Management – Forgot password and reset password functionality.
+Authentication – User login, registration, and JWT-based authentication.
 
-Profile Management – Update user information securely.
+App-Level Security – Every API request is validated using the app’s credentials (x-app-id, x-app-secret).
 
-Secure Routes – Middleware for authentication, error handling, and request validation.
+Password Management – Forgot password, reset password, and password update.
 
-Email Notifications – Sends emails using a personal SMTP server.
+Profile Management – Securely update user profile information.
 
-Validation – Input validation using Zod.
+MFA Support – Optional Multi-Factor Authentication (MFA) flow for login.
 
-Clean Architecture – Controllers, handlers, services, and middleware separated for maintainable code.
+Email Notifications – Sends emails for verification and password reset via SMTP or external providers (e.g., SendGrid).
 
-Database – MongoDB with Mongoose for schema definition and database interaction.
+Clean Architecture – Clear separation of concerns (controllers, handlers, services, middleware).
 
-Tech Stack
+Validation – Request validation using Zod.
 
-Node.js + TypeScript
-
-Express.js for API routing
-
-MongoDB + Mongoose
-
-JWT for authentication
-
-Zod for request validation
-
-Nodemailer for sending emails
-
-Middleware for validation, error handling, and security
-
-Requirements
-
-Node.js (v16 or higher recommended)
-
-MongoDB running locally or remotely
-
-Access to an SMTP server for sending emails
-
-
-npm install 
-npm run dev
+Database – MongoDB with Mongoose schema models.
