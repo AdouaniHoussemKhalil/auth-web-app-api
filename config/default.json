@@ -1,11 +1,6 @@
 {
-  "authentification": {
-    "SECRET_TOKEN": "your secret token",
-    "REFRESH_SECRET_TOKEN": "your refresh secret token",
-    "SECRET_RESET_PASSWORD_TOKEN":"your secret reset password token"
-  },
   "db": {
-    "uri": "your mongodb uri"
+    "uri": ""
   },
   "server": {
     "port": 8080
@@ -19,14 +14,12 @@
       "host": "smtp.gmail.com",
       "secure": true,
       "auth": {
-        "user": "your email",
-        "pass": "your email password"
+        "user": "",
+        "pass": ""
       }
     },
     "info": {
-      "from": "your email",
-      "subject": "Réinitialisation de votre mot de passe",
-      "image": "Image url" 
+      "from": "Authentification Service"
     }
   }
 }

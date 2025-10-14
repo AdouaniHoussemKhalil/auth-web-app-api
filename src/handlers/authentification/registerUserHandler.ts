@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../middleware/error/errorHandler";
 import User from "../../models/User";
-import { hashPassword } from "../../utils/password";
+import { hashPassword } from "../../utils/hash";
 import jwt, { Secret } from "jsonwebtoken";
 import config from "config";
-import { getUserData } from "../../utils/user";
+import { generateUserToken } from "../../services/token/tokenService";
 
 const registerUserHandler = async (
   request: Request,
@@ -12,6 +12,8 @@ const registerUserHandler = async (
   next: NextFunction
 ) => {
   try {
+    const appId = (request as any).appClient.appId;
+
     const {
       firstName,
       lastName,
@@ -34,9 +36,10 @@ const registerUserHandler = async (
       error.code = "userAlreadyExists";
       throw error;
     }
-
+    
     const hashedPassword = await hashPassword(password);
     const newUser = new User({
+      clientId: appId,
       firstName,
       lastName,
       email,
@@ -45,18 +48,21 @@ const registerUserHandler = async (
     });
     await newUser.save();
 
+    const returnedUser: any = {
+      id: newUser.id,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      email: newUser.email,
+      role: newUser.role,
+    };
 
-    const returnedUser = getUserData(newUser);
-    const secret_token : Secret = config.get("authentification.SECRET_TOKEN");
-    const token = jwt.sign({jwtPayload: returnedUser }, secret_token, {
-      expiresIn: "1h"
-  });
+    const token = await generateUserToken({ jwtPayload: returnedUser }, appId);
 
     response.status(201).json({
       message: "User registered successfully",
       user: returnedUser,
       token,
-      isSuccess: true
+      isSuccess: true,
     });
   } catch (error) {
     next(error);

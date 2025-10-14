@@ -1,13 +1,19 @@
-import { Recipient } from "./models/recipient";
+import { Recipient } from "./models/Recipient";
+import { emailTemplates, EmailTemplateType } from "./models/Template";
+
 const nodemailer = require("nodemailer");
 const config = require("config");
 
 export const sendMailAsync = async (
   recipient: Recipient,
-  resetCode: string
+  emailType: EmailTemplateType,
+  appClientBranding: {
+    appName: string;
+    logoUrl?: string;
+  },
+  value?: string
 ) => {
   const smtp = config.get("email.smtp");
-  const emailInfos = config.get("email.info");
 
   const transporter = nodemailer.createTransport({
     host: smtp.host,
@@ -19,24 +25,46 @@ export const sendMailAsync = async (
     },
   });
 
-  const getHtml = (recipientFullName: string, resetCode: string): string => {
-    const html = `
-      <div style=${emailInfos.image}>
-        <img src="https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg" alt="Logo" style="width: 100px; height: auto; display: block; margin-bottom: 20px;">
-        <h3>Bonjour ${recipientFullName},</h3>
-        <p>Pour confirmer votre mot de passe, vous pouvez utiliser ce code de confirmation :</p>
-        <p style="font-size: 18px; font-weight: bold;">Code de confirmation: <strong>${resetCode}</strong></p>
-      </div>
-    `;
-    return html;
-  };
-
   const info = await transporter.sendMail({
-    from: "",
+    from: appClientBranding.appName,
     to: recipient.email,
-    subject: emailInfos.subject,
-    html: getHtml(recipient.fullName, resetCode),
+    subject: emailType,
+    html: getEmailTemplate(emailType, recipient.fullName, value),
   });
 
-  console.log(info, "... sent mail to : ", recipient.email);
+  console.log(info, "sent mail to : ", recipient.email);
+};
+
+const getEmailTemplate = (
+  emailType: EmailTemplateType,
+  recipientFullName: string,
+  value?: string
+) => {
+  switch (emailType) {
+    case EmailTemplateType.ForgotPassword:
+      return emailTemplates.forgotPasswordEmail(
+        recipientFullName,
+        value ?? "Inconnu"
+      );
+    case EmailTemplateType.ActivateMFA:
+      return emailTemplates.successfullyActivatedMFAEmail(
+        recipientFullName
+      );
+    case EmailTemplateType.DeactivateMFA:
+      return emailTemplates.successfullyDeactivatedMFAEmail(
+        recipientFullName
+      );
+    case EmailTemplateType.MFAActivationRequest:
+      return emailTemplates.mfaActivationRequestEmail(
+        recipientFullName,
+        value ?? "Inconnu"
+      );
+    case EmailTemplateType.MFADeactivationRequest:
+      return emailTemplates.mfaDeactivationRequestEmail(
+        recipientFullName,
+        value ?? "Inconnu"
+      );
+    default:
+      throw new Error("Unknown email type");
+  }
 };
