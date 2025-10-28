@@ -1,113 +1,159 @@
-export enum EmailTemplateType {
-  ForgotPassword = "forgotPasswordEmail",
-  LoginByCodeMFA = "loginByCodeMFAEmail",
-  ActivateMFA = "activateMFAEmail",
-  DeactivateMFA = "deactivateMFAEmail",
-  SuccessfullyActivatedMFA = "successfullyActivatedMFAEmail",
-  SuccessfullyDeactivatedMFA = "successfullyDeactivatedMFAEmail",
-  MFAActivationRequest = "mfaActivationRequestEmail",
-  MFADeactivationRequest = "mfaDeactivationRequestEmail"
+export interface EmailBaseProps {
+  recipientFullName: string;
+  primaryColor: string;
+  variable?: string;
+  logoUrl?: string;
 }
 
-export const emailTemplates = {
-  forgotPasswordEmail: (recipientFullName: string, resetCode: string) =>
-    getForgotPasswordEmailHtml(recipientFullName, resetCode),
-
-  activateMFAEmail: (recipientFullName: string, MFACode: string) =>
-    getActivateMFAEmailHtml(recipientFullName, MFACode),
-
-  successfullyActivatedMFAEmail: (recipientFullName: string) =>
-    getSuccessfullyActivatedMFAEmailHtml(recipientFullName),
-
-  successfullyDeactivatedMFAEmail: (recipientFullName: string) =>
-    getSuccessfullyDeactivatedMFAEmailHtml(recipientFullName),
-
-  loginByCodeMFAEmail: (recipientFullName: string, MFACode: string) =>
-    getLoginByCodeMFAEmailHtml(recipientFullName, MFACode),
-
-  mfaActivationRequestEmail: (recipientFullName: string, link: string) =>
-    getMFAActivationRequestEmailHtml(recipientFullName, link),
-
-  mfaDeactivationRequestEmail: (recipientFullName: string, link: string) =>
-    getMFADeactivationRequestEmailHtml(recipientFullName, link)
-};
-
-//
-// 🔹 Templates HTML
-//
-
-const getForgotPasswordEmailHtml = (recipientFullName: string, resetCode: string): string => `
-  <div>
-    <img src="https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg" alt="Logo" style="width: 100px; margin-bottom: 20px;">
-    <h3>Bonjour ${recipientFullName},</h3>
-    <p>Vous avez demandé à réinitialiser votre mot de passe.</p>
-    <p>Utilisez le code suivant pour confirmer votre demande :</p>
-    <p style="font-size: 18px; font-weight: bold;">Code de confirmation : <strong>${resetCode}</strong></p>
-    <p>Ce code expirera dans quelques minutes.</p>
-    <p>Si vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail.</p>
+const renderBaseTemplate = (content: string, props: EmailBaseProps) => `
+  <div style="background-color: ${
+    props.primaryColor
+  }; padding: 20px; border-radius: 5px;">
+    <img src="${
+      props.logoUrl ||
+      "https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg"
+    }" alt="Logo" style="width: 100px; margin-bottom: 20px;">
+    <h3>Bonjour ${props.recipientFullName},</h3>
+    ${content}
   </div>
 `;
 
-const getActivateMFAEmailHtml = (recipientFullName: string, MFACode: string): string => `
-  <div>
-    <img src="https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg" alt="Logo" style="width: 100px; margin-bottom: 20px;">
-    <h3>Bonjour ${recipientFullName},</h3>
-    <p>Pour activer la vérification en deux étapes (MFA), veuillez saisir le code ci-dessous :</p>
-    <p style="font-size: 18px; font-weight: bold;">Code de vérification : <strong>${MFACode}</strong></p>
-    <p>Ce code est valable pendant quelques minutes uniquement.</p>
-  </div>
-`;
+export const templates = {
+  forgotPassword: {
+    id: "forgotPassword",
+    subject: "Réinitialisation de votre mot de passe",
+    getHtml: ({
+      recipientFullName,
+      primaryColor,
+      logoUrl,
+      variable,
+    }: EmailBaseProps) =>
+      renderBaseTemplate(
+        `
+        <p>Vous avez demandé à réinitialiser votre mot de passe.</p>
+        <p>Utilisez le code suivant pour confirmer votre demande :</p>
+        <p style="font-size: 18px; font-weight: bold;">
+          Code de confirmation : <strong>${variable}</strong>
+        </p>
+        <p>Ce code expirera dans quelques minutes.</p>
+        <p>Si vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail.</p>
+      `,
+        { recipientFullName, primaryColor, logoUrl, variable }
+      ),
+  },
 
-const getLoginByCodeMFAEmailHtml = (recipientFullName: string, MFACode: string): string => `
-  <div>
-    <img src="https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg" alt="Logo" style="width: 100px; margin-bottom: 20px;">
-    <h3>Bonjour ${recipientFullName},</h3>
-    <p>Pour finaliser votre connexion, veuillez saisir le code de vérification ci-dessous :</p>
-    <p style="font-size: 18px; font-weight: bold;">Code de connexion : <strong>${MFACode}</strong></p>
-    <p>Ce code expirera dans quelques minutes.</p>
-    <p>Si vous n’avez pas tenté de vous connecter, veuillez ignorer cet e-mail.</p>
-  </div>
-`;
+  loginByCodeMFA: {
+    id: "loginByCodeMFA",
+    subject: "Connexion par code - Authentification à deux facteurs",
+    getHtml: ({
+      recipientFullName,
+      primaryColor,
+      logoUrl,
+      variable,
+    }: EmailBaseProps & { variable: string }) =>
+      renderBaseTemplate(
+        `
+        <p>Pour finaliser votre connexion, veuillez saisir le code ci-dessous :</p>
+        <p style="font-size: 18px; font-weight: bold;">
+          Code de connexion : <strong>${variable}</strong>
+        </p>
+        <p>Ce code expirera dans quelques minutes.</p>
+      `,
+        { recipientFullName, primaryColor, logoUrl, variable }
+      ),
+  },
 
-const getSuccessfullyActivatedMFAEmailHtml = (recipientFullName: string): string => `
-  <div>
-    <img src="https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg" alt="Logo" style="width: 100px; margin-bottom: 20px;">
-    <h3>Bonjour ${recipientFullName},</h3>
-    <p>Votre authentification à deux facteurs (MFA) a été activée avec succès ✅.</p>
-    <p>Lors de votre prochaine connexion, vous devrez entrer un code de vérification envoyé par e-mail ou via votre méthode MFA.</p>
-    <p>Merci de renforcer la sécurité de votre compte !</p>
-  </div>
-`;
+  activateMFA: {
+    id: "activateMFA",
+    subject: "Activation de la vérification en deux étapes",
+    getHtml: ({
+      recipientFullName,
+      primaryColor,
+      logoUrl,
+      variable,
+    }: EmailBaseProps) =>
+      renderBaseTemplate(
+        `
+        <p>Pour activer la vérification en deux étapes (MFA), veuillez saisir le code ci-dessous :</p>
+        <p style="font-size: 18px; font-weight: bold;">
+          Code de vérification : <strong>${variable}</strong>
+        </p>
+      `,
+        { recipientFullName, primaryColor, logoUrl, variable }
+      ),
+  },
 
-const getSuccessfullyDeactivatedMFAEmailHtml = (recipientFullName: string): string => `
-  <div>
-    <img src="https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg" alt="Logo" style="width: 100px; margin-bottom: 20px;">
-    <h3>Bonjour ${recipientFullName},</h3>
-    <p>Votre authentification à deux facteurs (MFA) a été désactivée avec succès.</p>
-    <p>Vous pourrez désormais vous connecter uniquement avec votre mot de passe.</p>
-    <p>Si vous n’êtes pas à l’origine de cette action, contactez immédiatement notre support.</p>
-  </div>
-`;
+  deactivateMFA: {
+    id: "deactivateMFA",
+    subject: "Désactivation de la vérification en deux étapes",
+    getHtml: ({
+      recipientFullName,
+      primaryColor,
+      logoUrl,
+      variable,
+    }: EmailBaseProps) =>
+      renderBaseTemplate(
+        `
+        <p>Pour désactiver la vérification en deux étapes (MFA), veuillez saisir le code ci-dessous :</p>
+        <p style="font-size: 18px; font-weight: bold;">
+          Code de vérification : <strong>${variable}</strong>
+        </p>
+      `,
+        { recipientFullName, primaryColor, logoUrl, variable }
+      ),
+  },
 
-const getMFAActivationRequestEmailHtml = (recipientFullName: string, link: string): string => `
-  <div>
-    <img src="https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg" alt="Logo" style="width: 100px; margin-bottom: 20px;">
-    <h3>Bonjour ${recipientFullName},</h3>
-    <p>Vous avez demandé à activer l’authentification à deux facteurs (MFA).</p>
-    <p>Pour confirmer cette demande, cliquez sur le lien ci-dessous :</p>
-    <p><a href="${link}" style="font-size: 18px; font-weight: bold;">Activer la vérification en deux étapes</a></p>
-    <p>Ce lien expirera dans quelques minutes.</p>
-  </div>
-`;
+  mfaActivationRequest: {
+    id: "mfaActivationRequest",
+    subject: "Demande d'activation de la vérification en deux étapes",
+    getHtml: (props: EmailBaseProps) =>
+      renderBaseTemplate(
+        `<p>Pour activer la vérification en deux étapes (MFA), veuillez cliquer sur le lien ci-dessous :</p>
+        <p style="font-size: 18px; font-weight: bold;">
+          Lien d'activation : <a href="${props.variable}"><strong>Activer MFA</strong></a>
+        </p>`,
+        props
+      ),
+  },
 
-const getMFADeactivationRequestEmailHtml = (recipientFullName: string, link: string): string => `
-  <div>
-    <img src="https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg" alt="Logo" style="width: 100px; margin-bottom: 20px;">
-    <h3>Bonjour ${recipientFullName},</h3>
-    <p>Vous avez demandé à désactiver l’authentification à deux facteurs (MFA).</p>
-    <p>Pour confirmer la désactivation, cliquez sur le lien ci-dessous :</p>
-    <p><a href="${link}" style="font-size: 18px; font-weight: bold;">Confirmer la désactivation</a></p>
-    <p>Ce lien expirera dans quelques minutes.</p>
-    <p>Si vous n’avez pas effectué cette demande, ignorez simplement cet e-mail.</p>
-  </div>
-`;
+  mfaDeactivationRequest: {
+    id: "mfaDeactivationRequest",
+    subject: "Demande de désactivation de la vérification en deux étapes",
+    getHtml: (props: EmailBaseProps) =>
+      renderBaseTemplate(
+        `<p>Pour désactiver la vérification en deux étapes (MFA), veuillez cliquer sur le lien ci-dessous :</p>
+        <p style="font-size: 18px; font-weight: bold;">
+          Lien de désactivation : <a href="${props.variable}"><strong>Désactiver MFA</strong></a>
+        </p>`,
+        props
+      ),
+  },
+
+  successfullyActivatedMFA: {
+    id: "successfullyActivatedMFA",
+    subject: "Vérification en deux étapes activée",
+    getHtml: (props: EmailBaseProps) =>
+      renderBaseTemplate(
+        `<b>Félicitations ! Votre vérification en deux étapes (MFA) a été activée avec succès.</b>
+        <p>Vous pouvez maintenant vous connecter en toute sécurité.</p>
+        <p>Pour votre prochaine connexion, veuillez utiliser le code de vérification envoyé à votre adresse e-mail.</p>
+        `,
+        props
+      ),
+  },
+
+  successfullyDeactivatedMFA: {
+    id: "successfullyDeactivatedMFA",
+    subject: "Vérification en deux étapes désactivée",
+    getHtml: (props: EmailBaseProps) =>
+      renderBaseTemplate(
+        `<b>Votre vérification en deux étapes (MFA) a été désactivée avec succès.</b>
+        <p>La vérification en deux étapes (MFA) renforce la sécurité de votre compte.</p>
+        <p>Essayez de l'activer à nouveau si nécessaire.</p>
+        `,
+        props
+      ),
+  },
+} as const;
+
+export type TemplateId = keyof typeof templates;

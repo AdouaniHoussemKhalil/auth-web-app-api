@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import User, { MFAMethod } from "../../models/User";
 import { CustomError } from "../../middleware/error/errorHandler";
-import { sendMailAsync } from "../../services/email/sendMails";
-import { Recipient } from "../../services/email/models/Recipient";
-import { EmailTemplateType } from "../../services/email/models/Template";
 import { MFARequestStatus, UserMFARequest } from "../../models/UserMFARequest";
+import sendTemplateEmail from "../../services/email/sendMails";
+import { templates } from "../../services/email/models/Template";
+import { IAppClient } from "../../models/AppClient";
 
 const activateMFAHandler = async (
   req: Request,
@@ -12,13 +12,12 @@ const activateMFAHandler = async (
   next: NextFunction
 ) => {
   try {
+    const appClient: IAppClient = (req as any).appClient;
 
-    const appClient = (req as any).appClient;
+    const { userId, activationId } = req.body;
 
-    const { userId, activationToken, sendSuccessMail = false } = req.body;
-
-    if (!activationToken) {
-      const error = new Error("Activation token is required") as CustomError;
+    if (!activationId) {
+      const error = new Error("Activation ID is required") as CustomError;
       error.status = 400;
       throw error;
     }
@@ -37,14 +36,22 @@ const activateMFAHandler = async (
       throw error;
     }
 
-    const userMFARequest = await UserMFARequest.findOne({
+    const query: any = {
       userId,
-      token: activationToken,
-    });
+      "verification.type": appClient.mfaSettings?.verificationMode,
+    };
+
+    if (appClient.mfaSettings?.verificationMode === "code") {
+      query["verification.code"] = activationId;
+    } else if (appClient.mfaSettings?.verificationMode === "link") {
+      query["verification.link"] = activationId;
+    }
+
+    const userMFARequest = await UserMFARequest.findOne(query);
 
     if (!userMFARequest) {
       const error = new Error(
-        "Invalid or expired activation token"
+        "Invalid or expired activation ID"
       ) as CustomError;
       error.status = 400;
       throw error;
@@ -54,7 +61,7 @@ const activateMFAHandler = async (
       userMFARequest.status = MFARequestStatus.EXPIRED;
       await userMFARequest.save();
       const error = new Error(
-        "Invalid or expired activation token"
+        "Invalid or expired activation ID"
       ) as CustomError;
       error.status = 400;
       throw error;
@@ -69,20 +76,22 @@ const activateMFAHandler = async (
     await userMFARequest.save();
     await user.save();
 
-    if (sendSuccessMail) {
-      const recipient: Recipient = {
-        email: user.email,
-        fullName: user.firstName,
-      };
 
-      await sendMailAsync(
-        recipient,
-        EmailTemplateType.SuccessfullyActivatedMFA,
-        {
+    if (
+      appClient.branding?.templates.find(t => t.id === templates.successfullyActivatedMFA.id)
+        ?.isActive
+    ) {
+      await sendTemplateEmail(templates.successfullyActivatedMFA.id, {
+        recipient: {
+          email: user.email,
+          fullName: `${user.firstName} ${user.lastName}`,
+        },
+        appClientBranding: {
           appName: appClient.branding.appName,
+          primaryColor: appClient.branding.primaryColor,
           logoUrl: appClient.branding.logoUrl,
-        }
-      );
+        },
+      });
     }
 
     res

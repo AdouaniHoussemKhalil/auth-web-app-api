@@ -6,6 +6,7 @@ import authRoutes from "./routes/authRoutes";
 import errorHandler from "./middleware/error/errorHandler";
 import { MongooseError } from "mongoose";
 import mongoose from "./db";
+import configRoutes from "./routes/configRoutes";
 
 
 const app = express();
@@ -32,6 +33,7 @@ app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
 app.use("/auth", authRoutes);
+app.use("/config", configRoutes);
 app.use(errorHandler);
 
 
