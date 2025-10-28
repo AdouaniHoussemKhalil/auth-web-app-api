@@ -2,8 +2,10 @@ import { NextFunction, Request, Response } from "express";
 import { comparePassword } from "../../utils/hash";
 import { CustomError } from "../../middleware/error/errorHandler";
 import User from "../../models/User";
-import jwt, { Secret } from "jsonwebtoken";
+import { Secret } from "jsonwebtoken";
 import config from "config";
+import { IAppClient } from "../../models/AppClient";
+import { generateResetPasswordToken } from "../../services/token/tokenService";
 
 const verifyResetCodeHandler = async (
   request: Request,
@@ -11,8 +13,11 @@ const verifyResetCodeHandler = async (
   next: NextFunction
 ) => {
   try {
-    const { email, resetCode } = request.body;
 
+    const appClient: IAppClient = (request as any).appClient;
+
+    const { email, resetCode } = request.body;
+    
     if (!email || !resetCode) {
       const error = new Error("An error occurred") as CustomError;
       error.status = 400;
@@ -65,13 +70,7 @@ const verifyResetCodeHandler = async (
       throw error;
     }
 
-    const secret_token: Secret = config.get(
-      "authentification.SECRET_RESET_PASSWORD_TOKEN"
-    );
-
-    const resetToken = jwt.sign({ jwtPayload: resetCode }, secret_token, {
-      expiresIn: "10m",
-    });
+    const resetPasswordToken = await generateResetPasswordToken({ resetCode }, appClient.appId);
 
     user.secondaryUserAccess = undefined;
     await user.save();
@@ -80,7 +79,7 @@ const verifyResetCodeHandler = async (
       message: "validResetCode",
       isSuccess: true,
       userId: user.id,
-      resetLink: `${config.get("front.url")}/reset-password/${resetToken}`,
+      resetLink: `${appClient.resetPasswordUrl ?? ""}?${resetPasswordToken}`,
     });
   } catch (error) {
     next(error);

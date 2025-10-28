@@ -2,10 +2,10 @@ import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../middleware/error/errorHandler";
 import User, { SecondaryUserAccessType } from "../../models/User";
 import { generateResetCode } from "../../utils/random";
-import { sendMailAsync } from "../../services/email/sendMails";
 import { Recipient } from "../../services/email/models/Recipient";
 import { hash } from "../../utils/hash";
-import { EmailTemplateType } from "../../services/email/models/Template";
+import sendTemplateEmail from "../../services/email/sendMails";
+import { templates } from "../../services/email/models/Template";
 
 const forgotPasswordHandler = async (
   request: Request,
@@ -36,15 +36,16 @@ const forgotPasswordHandler = async (
       fullName: `${user.firstName} ${user.lastName}`,
       email: user.email,
     };
-    await sendMailAsync(
+
+    await sendTemplateEmail(templates.forgotPassword.id, {
       recipient,
-      EmailTemplateType.ForgotPassword,
-      {
+      appClientBranding: {
         appName: appClient.branding.appName,
+        primaryColor: appClient.branding.primaryColor,
         logoUrl: appClient.branding.logoUrl,
       },
-      resetCode
-    );
+      variable: resetCode,
+    });
 
     const resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
     const resetPasswordToken = await hash(resetCode);

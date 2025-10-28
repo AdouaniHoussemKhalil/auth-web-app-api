@@ -2,12 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import User, { SecondaryUserAccessType } from "../../models/User";
 import { CustomError } from "../../middleware/error/errorHandler";
 import { comparePassword, hash } from "../../utils/hash";
-import jwt, { Secret } from "jsonwebtoken";
-import config from "config";
 import { generateMFACode } from "../../utils/random";
-import { sendMailAsync } from "../../services/email/sendMails";
-import { Recipient } from "../../services/email/models/Recipient";
-import { EmailTemplateType } from "../../services/email/models/Template";
 import { generateUserToken } from "../../services/token/tokenService";
 
 const loginUserHandler = async (
@@ -16,8 +11,6 @@ const loginUserHandler = async (
   next: NextFunction
 ) => {
   try {
-
-    const appClient = (request as any).appClient;
 
     const { email, password } = request.body;
     if (!email || !password) {
@@ -57,15 +50,6 @@ const loginUserHandler = async (
     if (user.isMFAActivated) {
       const code = generateMFACode();
 
-      const recipient: Recipient = {
-        email: user.email,
-        fullName: `${user.firstName} ${user.lastName}`,
-      };
-
-      await sendMailAsync(recipient, EmailTemplateType.LoginByCodeMFA, {
-        appName: appClient.branding.appName,
-        logoUrl: appClient.branding.logoUrl,
-      }, code);
 
 
       user.secondaryUserAccess = {

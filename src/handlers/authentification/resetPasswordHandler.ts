@@ -9,11 +9,18 @@ const resetPasswordHandler = async (
     next: NextFunction
 ) => {
     try{
-        const {userId, password } = request.body;
+        const {userId, password, confirmPassword } = request.body;
 
-        if( !password || !userId) {
+        if( !password || !userId || !confirmPassword) {
             const error = new Error("Some required fields are missing") as CustomError;
             error.status = 400;
+            throw error;
+        }
+
+        if(password !== confirmPassword) {
+            const error = new Error("Passwords do not match") as CustomError;
+            error.status = 400;
+            error.code = "passwordsDoNotMatch";
             throw error;
         }
 

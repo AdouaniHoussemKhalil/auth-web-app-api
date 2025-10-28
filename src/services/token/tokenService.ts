@@ -22,3 +22,14 @@ export const verifyUserToken = async (token: string, appId: string): Promise<any
     throw new Error("Invalid or expired user token");
   }
 };
+
+export const generateResetPasswordToken = async (payload: object, appId: string): Promise<string> => {
+  const appClient = await AppClient.findOne({ appId, isActive: true });
+  if (!appClient) throw new Error("Invalid or inactive App Client");
+
+  return jwt.sign(
+    { ...payload, appId },
+    appClient.secretKey,
+    { expiresIn: appClient.tokenExpiresIn || "1h", audience: appClient.name }
+  );
+};

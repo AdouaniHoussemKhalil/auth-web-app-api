@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../middleware/error/errorHandler";
 import User from "../../models/User";
 import { hashPassword } from "../../utils/hash";
-import jwt, { Secret } from "jsonwebtoken";
 import config from "config";
 import { generateUserToken } from "../../services/token/tokenService";
 
@@ -19,10 +18,11 @@ const registerUserHandler = async (
       lastName,
       email,
       password,
+      confirmPassword,
       role = "user",
     } = request.body;
 
-    if (!firstName || !lastName || !email || !password) {
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
       const error = new Error(
         "Some required fields are missing"
       ) as CustomError;
@@ -30,13 +30,23 @@ const registerUserHandler = async (
       throw error;
     }
 
-    if (await User.findOne({ email })) {
+    const appClient = (request as any).appClient;
+
+
+    if (await User.findOne({ email, clientId: appClient.appId })) {
       const error = new Error("User already exists") as CustomError;
       error.status = 400;
       error.code = "userAlreadyExists";
       throw error;
     }
-    
+
+    if (password !== confirmPassword) {
+      const error = new Error("Passwords do not match") as CustomError;
+      error.status = 400;
+      error.code = "passwordsDoNotMatch";
+      throw error;
+    }
+
     const hashedPassword = await hashPassword(password);
     const newUser = new User({
       clientId: appId,
@@ -56,7 +66,8 @@ const registerUserHandler = async (
       role: newUser.role,
     };
 
-    const token = await generateUserToken({ jwtPayload: returnedUser }, appId);
+    const isDev = returnedUser.role === "developer";
+    const token = await generateUserToken({ jwtPayload: returnedUser }, isDev, appId);
 
     response.status(201).json({
       message: "User registered successfully",

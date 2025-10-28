@@ -7,6 +7,7 @@ export const registerSchema = z
     lastName: z.string().min(3, {message: "lastNameLength"}),
     email: z.string().email(),
     password: passwordSchema,
+    confirmPassword: passwordSchema,
     role: z.enum(["user"]).optional()
  }).strict();
  
