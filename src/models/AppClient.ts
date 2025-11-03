@@ -30,11 +30,13 @@ const MFASettingsSchema = new Schema<MFASettings>({
 });
 
 export interface IAppClient extends Document {
-  appId: string;
+  id: string;
+  tenantId:  mongoose.Types.ObjectId;
   name: string;
   secretKey: string;
   apiKey: string;
   tokenExpiresIn?: string;
+  resetTokenExpiresIn?: string;
   mfaSettings?: MFASettings; 
   isActive: boolean;
   allowedOrigins?: string[];
@@ -54,11 +56,13 @@ const AppClientBrandingSchema = new Schema<AppClientBranding>({
 });
 
 const AppClientSchema = new Schema<IAppClient>({
-  appId: { type: String, required: true, unique: true },
+  id: { type: String, required: true, unique: true },
+  tenantId: { type:  Schema.Types.ObjectId, ref: "Tenant" , required: true },
   name: { type: String, required: true },
   secretKey: { type: String, required: true },
   apiKey: { type: String, required: true },
   tokenExpiresIn: { type: String, default: "1h" },
+  resetTokenExpiresIn: { type: String, default: "7d" },
   isActive: { type: Boolean, default: true },
   allowedOrigins: { type: [String], default: [] },
   mfaSettings: { type: MFASettingsSchema, default: {} },
