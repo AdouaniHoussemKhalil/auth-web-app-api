@@ -24,9 +24,9 @@ export default async function sendTemplateEmail<T extends TemplateId>(
     variable,
   }: {
     recipient: Recipient;
-    appClientBranding: {
-      appName: string;
-      primaryColor: string;
+    appClientBranding?: {
+      appName?: string;
+      primaryColor?: string ;
       logoUrl?: string;
     };
     variable?: string;
@@ -38,13 +38,13 @@ export default async function sendTemplateEmail<T extends TemplateId>(
 
   const html = template.getHtml({
     recipientFullName: recipient.fullName,
-    primaryColor: appClientBranding.primaryColor,
-    logoUrl: appClientBranding.logoUrl,
+    primaryColor: appClientBranding?.primaryColor ?? "#f6f3f3ff",
+    logoUrl: appClientBranding?.logoUrl,
     variable: variable ?? "",
   });
 
   const info = await transporter.sendMail({
-    from: `"${appClientBranding.appName}" <no-reply@yourapp.com>`,
+    from: `"${appClientBranding?.appName ?? "Auth service"}" <no-reply@yourapp.com>`,
     to: recipient.email,
     subject: template.subject,
     html,

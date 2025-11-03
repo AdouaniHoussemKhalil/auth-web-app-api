@@ -1,8 +1,4 @@
-export const generateResetCode = (): string => {
+
+export const randomSixDigitCode = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
-
-export const generateMFACode = (): string => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
