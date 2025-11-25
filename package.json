@@ -2,9 +2,10 @@
   "name": "auth-ad",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "start": "ts-node src/index.ts"
-  },
+"scripts": {
+  "build": "tsc",
+  "start": "node dist/index.js"
+}
   "keywords": [],
   "author": "",
   "license": "ISC",
