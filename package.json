@@ -1,15 +1,17 @@
 {
   "name": "auth-ad",
   "version": "1.0.0",
-  "main": "index.js",
-"scripts": {
-  "build": "tsc",
-  "start": "node dist/index.js"
-}
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "description": "",
+  "main": "index.js",
+  "license": "ISC",
+  "author": "",
+  "keywords": [],
+
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+
   "dependencies": {
     "@types/body-parser": "^1.19.5",
     "@types/cors": "^2.8.17",
@@ -26,7 +28,7 @@
     "lodash": "^4.17.21",
     "mongodb": "^6.9.0",
     "mongoose": "^8.6.2",
-    "mongose": "^0.0.2-security",
+    "mongose": "0.0.2-security",
     "ms": "^2.1.3",
     "nodemailer": "^6.9.15",
     "nodemon": "^3.1.4",
@@ -36,6 +38,7 @@
     "typescript": "^5.6.2",
     "zod": "^3.23.8"
   },
+
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/config": "^3.3.5",
