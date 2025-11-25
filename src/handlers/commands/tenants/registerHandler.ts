@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction } from "express";
-import { Tenant } from "../../models/Tenant";
+import e, { Request, Response, NextFunction } from "express";
+import { Tenant } from "../../../models/Tenant";
 import crypto from "crypto";
-import { CustomError } from "../../middleware/error/errorHandler";
-import { hash } from "../../services/hashing/hash";
-import { generateTenantToken } from "../../services/token/tokenService";
+import { CustomError } from "../../../middleware/error/errorHandler";
+import { hash } from "../../../services/hashing/hash";
+import { generateTenantToken } from "../../../services/token/tokenService";
 
 const config = require("config");
 const scopes = config.get("tenant.scopes");
@@ -43,8 +43,9 @@ const registerHandler = async (
 
     const secretKey = crypto.randomBytes(64).toString("hex");
 
+    const tenantId = crypto.randomUUID();
     const newTenant = new Tenant({
-      tenantId: crypto.randomUUID(),
+      id: tenantId,
       email,
       password: hashedPassword,
       firstName,
@@ -59,12 +60,13 @@ const registerHandler = async (
     await newTenant.save();
 
     const result = {
-      email,
-      firstName,
-      lastName,
-      secretKey,
-      role,
-      scopes,
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
+      secretKey: secretKey,
+      role: role,
+      scopes: scopes,
+      tenantId: tenantId
     };
 
     const { access_token, refresh_token } = await generateTenantToken(

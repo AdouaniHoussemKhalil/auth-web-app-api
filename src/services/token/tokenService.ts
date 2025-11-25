@@ -3,7 +3,6 @@ import crypto from "crypto";
 import AppClient from "../../models/AppClient";
 import { Tenant } from "../../models/Tenant";
 
-
 const config = require("config");
 const AUDIENCE = config.get("aud");
 
@@ -11,7 +10,7 @@ export const generateConsumerToken = async (
   payload: object,
   appId: string
 ): Promise<{ access_token: string; refresh_token: string }> => {
-  const appClient = await AppClient.findOne({ appId, isActive: true });
+  const appClient = await AppClient.findOne({ id: appId, isActive: true });
   if (!appClient) throw new Error("Invalid or inactive App Client");
 
   const accessSecret = crypto
@@ -47,8 +46,9 @@ export const verifyConsumerToken = async (
   appId: string,
   type: "access" | "refresh" = "access"
 ): Promise<any> => {
-  const appClient = await AppClient.findOne({ appId, isActive: true });
-  if (!appClient) throw new Error("Invalid App Client for token verification");
+  const appClient = await AppClient.findOne({ id: appId, isActive: true });
+  if (!appClient)
+    throw new Error("Invalid App Client for token verificationsss");
 
   const secret = crypto
     .createHash("sha256")
@@ -56,7 +56,7 @@ export const verifyConsumerToken = async (
     .digest("hex");
 
   try {
-    return jwt.verify(token, secret, { audience: AUDIENCE });
+    return jwt.verify(token, secret, { audience: appClient.name });
   } catch (err) {
     throw new Error("Invalid or expired user token");
   }
@@ -67,7 +67,7 @@ export const verifyTenantToken = async (
   tenantId: string,
   type: "access" | "refresh" = "access"
 ): Promise<any> => {
-  const tenant = await Tenant.findOne({ tenantId, isActive: true });
+  const tenant = await Tenant.findOne({ id: tenantId, isActive: true });
   if (!tenant) throw new Error("Invalid or inactive tenant");
 
   const secret = crypto

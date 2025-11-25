@@ -1,15 +1,15 @@
 import { Request, Response, NextFunction } from "express";
-import { Consumer } from "../../models/Consumer";
+import { Consumer } from "../../../models/Consumer";
 
 const getConsumerByIdQuery = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const { id, appId } = req.params;
 
     if (!id) {
       return res.status(400).json({ message: "Consumer ID is required" });
     }
 
-    const consumer = await Consumer.findById(id).lean();
+    const consumer = await Consumer.findOne({id: id, clientId: appId}).lean();
 
     if (!consumer) {
       return res.status(404).json({ message: "Consumer not found" });

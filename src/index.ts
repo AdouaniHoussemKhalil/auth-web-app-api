@@ -8,9 +8,11 @@ import mongoose from "./config/db";
 import consumersRoutes from "./app/routes/consumersRoutes";
 import tenantsRoutes from "./app/routes/tenantsRoutes";
 import configurationsRoutes from "./app/routes/configurationsRoutes";
+import { setupSwagger } from "./app/swagger/swagger";
 
 
 const app = express();
+
 const port = config.get("server.port");
 
 app.listen(port, () => {
@@ -29,13 +31,15 @@ mongoose.connection.on("disconnected", () => {
   console.log("Mongoose disconnected");
 });
 
+setupSwagger(app);
 
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json());
 app.use("/consumers", consumersRoutes);
 app.use("/tenants", tenantsRoutes);
-app.use("/configurations", configurationsRoutes);
+app.use("/config", configurationsRoutes);
+
 
 app.use(errorHandler);
 

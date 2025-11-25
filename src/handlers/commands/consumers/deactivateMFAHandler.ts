@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from "express";
-import { CustomError } from "../../middleware/error/errorHandler";
-import sendTemplateEmail from "../../services/email/sendMails";
-import { templates } from "../../services/email/models/Template";
-import { MFARequest } from "../../models/MFARequest";
-import { MFARequestStatus } from "../../models/enums/MFARequestStatus";
-import { IAppClient } from "../../models/AppClient";
-import { Consumer } from "../../models/Consumer";
+import { CustomError } from "../../../middleware/error/errorHandler";
+import sendTemplateEmail from "../../../services/email/sendMails";
+import { templates } from "../../../services/email/models/Template";
+import { MFARequest } from "../../../models/MFARequest";
+import { MFARequestStatus } from "../../../models/enums/MFARequestStatus";
+import { IAppClient } from "../../../models/AppClient";
+import { Consumer } from "../../../models/Consumer";
 
 const deactivateMFAHandler = async (
   req: Request,

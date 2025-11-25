@@ -1,5 +1,5 @@
 import { NextFunction, Response, Request } from "express";
-import { Consumer } from "../../models/Consumer";
+import { Consumer } from "../../../models/Consumer";
 
 const getConsumersQuery = async (req: Request, res: Response, next: NextFunction) => {
   try {

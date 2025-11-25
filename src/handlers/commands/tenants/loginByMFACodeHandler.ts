@@ -1,11 +1,11 @@
-import { NextFunction, Request, Response } from "express";
-import { CustomError } from "../../middleware/error/errorHandler";
-import { generateConsumerToken } from "../../services/token/tokenService";
-import { SecondaryUserAccessMethodType } from "../../models/subdocuments/SecondaryAccessMethod";
-import { Consumer } from "../../models/Consumer";
-import { compare } from "../../services/hashing/hash";
+import { Request, Response, NextFunction } from "express";
+import { Tenant } from "../../../models/Tenant";
+import { CustomError } from "../../../middleware/error/errorHandler";
+import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
+import { generateTenantToken } from "../../../services/token/tokenService";
+import { compare } from "../../../services/hashing/hash";
 
-const loginByCodeMFAHandler = async (
+const loginByMFACodeHandler = async (
   request: Request,
   response: Response,
   next: NextFunction
@@ -19,17 +19,17 @@ const loginByCodeMFAHandler = async (
       throw error;
     }
 
-    const user = await Consumer.findOne({ email });
-    if (!user) {
+    const tenant = await Tenant.findOne({ email });
+    if (!tenant) {
       const error = new Error("User not found") as CustomError;
       error.status = 404;
       throw error;
     }
 
-    const { code, expires, type } = user.secondaryUserAccess ?? {};
+    const { code, expires, type } = tenant.secondaryUserAccess ?? {};
 
     if (
-      !user.secondaryUserAccess ||
+      !tenant.secondaryUserAccess ||
       !code ||
       !expires ||
       !type ||
@@ -49,8 +49,8 @@ const loginByCodeMFAHandler = async (
     }
 
     if (Date.now() > expires.getTime()) {
-      user.secondaryUserAccess = undefined;
-      await user.save();
+      tenant.secondaryUserAccess = undefined;
+      await tenant.save();
       const error = new Error("Expired reset code") as CustomError;
       error.status = 400;
       error.code = "expiredResetCode";
@@ -59,29 +59,28 @@ const loginByCodeMFAHandler = async (
 
     
     if (!await compare(mfaCode, code)) {
-      const error = new Error("Invalid MFA code") as CustomError;
+      const error    = new Error("Invalid MFA code") as CustomError;
       error.status = 400;
       error.code = "invalidMfaCode";
       throw error;
     }
 
-    user.secondaryUserAccess = undefined;
-    await user.save();
+    tenant.secondaryUserAccess = undefined;
+    await tenant.save();
 
-    const returnedUser: any = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      role: user.role,
-      scopes: user.scopes
+    const result: any = {
+      tenantId: tenant.id,
+      firstName: tenant.firstName,
+      lastName: tenant.lastName,
+      email: tenant.email,
+      role: tenant.role,
+      scopes: tenant.scopes
     };
 
-    const appId = (request as any).appClient.id;
-    const {access_token, refresh_token} = await generateConsumerToken({ jwtPayload: returnedUser }, appId);
+    const {access_token, refresh_token} = await generateTenantToken({ jwtPayload: result }, tenant.secretKey);
 
     response.status(200).json({
-      returnedUser,
+      result,
       access_token,
       refresh_token,
       message: "MFA verified successfully",
@@ -92,4 +91,5 @@ const loginByCodeMFAHandler = async (
   }
 };
 
-export default loginByCodeMFAHandler;
+export default loginByMFACodeHandler;
+    

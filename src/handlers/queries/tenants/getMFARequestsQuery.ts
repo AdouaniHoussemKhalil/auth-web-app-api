@@ -1,5 +1,5 @@
 import { NextFunction, Response, Request } from "express";
-import { MFARequest } from "../../models/MFARequest";
+import { MFARequest } from "../../../models/MFARequest";
 
 const getMFARequestsQuery = async (
   req: Request,

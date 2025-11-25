@@ -1,12 +1,12 @@
 import { NextFunction, Request, Response } from "express";
-import { CustomError } from "../../middleware/error/errorHandler";
-import sendTemplateEmail from "../../services/email/sendMails";
-import { templates } from "../../services/email/models/Template";
-import { MFARequest } from "../../models/MFARequest";
-import { MFARequestStatus } from "../../models/enums/MFARequestStatus";
-import { MFAMethod } from "../../models/enums/MFAMethod";
-import { IAppClient } from "../../models/AppClient";
-import { Consumer } from "../../models/Consumer";
+import { CustomError } from "../../../middleware/error/errorHandler";
+import sendTemplateEmail from "../../../services/email/sendMails";
+import { templates } from "../../../services/email/models/Template";
+import { MFARequest } from "../../../models/MFARequest";
+import { MFARequestStatus } from "../../../models/enums/MFARequestStatus";
+import { MFAMethod } from "../../../models/enums/MFAMethod";
+import { IAppClient } from "../../../models/AppClient";
+import { Consumer } from "../../../models/Consumer";
 
 const activateMFAHandler = async (
   req: Request,
@@ -24,7 +24,7 @@ const activateMFAHandler = async (
       throw error;
     }
 
-    const user = await Consumer.findById(userId);
+    const user = await Consumer.findOne({ id: userId });
 
     if (!user) {
       const error = new Error("User not found") as CustomError;

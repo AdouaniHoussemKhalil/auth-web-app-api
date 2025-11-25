@@ -1,15 +1,20 @@
 import { z } from "zod";
 
 export const createClientAppSchema = z.object({
-  body: z.object({
-    tenantId: z.string().uuid({ message: "tenantId must be a valid UUID" }),
-    name: z.string().min(2, { message: "name must be at least 2 characters" }),
-    tokenExpiresIn: z.number().int().positive(),
-    resetTokenExpiresIn: z.number().int().positive(),
-    mfaExpiresIn: z.number().int().positive(),
-    redirectUrl: z.string().url(),
-    supportEmail: z.string().email(),
-    logoUrl: z.string().url().optional(),
-    primaryColor: z.string().regex(/^#([0-9A-F]{3}){1,2}$/i, { message: "primaryColor must be a hex color" }),
-  }),
+  tenantId: z.string().nonempty({ message: "tenantId is required" }),
+  name: z.string().min(2, { message: "name must be at least 2 characters" }),
+  tokenExpiresIn: z.string().optional(),
+  resetTokenExpiresIn: z.string().optional(),
+  mfaExpiresIn: z.string().optional(),
+  redirectUrl: z.string().url().optional(),
+  resetPasswordUrl: z.string().url().optional(),
+  supportEmail: z.string().email(),
+  logoUrl: z.string().url().optional(),
+  logoutUrl: z.string().url().optional(),
+  primaryColor: z
+    .string()
+    .regex(/^#([0-9A-F]{3}){1,2}$/i, {
+      message: "primaryColor must be a hex color",
+    })
+    .optional(),
 });

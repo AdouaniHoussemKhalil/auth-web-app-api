@@ -1,9 +1,9 @@
-import { Request, Response, NextFunction } from "express";
+import e, { Request, Response, NextFunction } from "express";
 import { OAuth2Client } from "google-auth-library";
-import { Tenant } from "../../models/Tenant";
+import { Tenant } from "../../../models/Tenant";
 import crypto from "crypto";
-import { UserRole } from "../../models/enums/UserRole";
-import { generateTenantToken } from "../../services/token/tokenService";
+import { UserRole } from "../../../models/enums/UserRole";
+import { generateTenantToken } from "../../../services/token/tokenService";
 
 const config = require("config");
 const googleConfig = config.get("google");
@@ -32,16 +32,19 @@ export const googleRegister = async (
 
     let tenant = await Tenant.findOne({ email });
 
+    let tenantId = tenant?.id;
+
     if (!tenant) {
       const secretKey = crypto.randomBytes(64).toString("hex");
-
+      tenantId = crypto.randomUUID();
       tenant = new Tenant({
-        tenantId: crypto.randomUUID(),
+        id: tenantId,
         email,
         firstName: given_name,
         lastName: family_name,
         secretKey,
         isActive: true,
+        isByGoogle: true,
         isMFAActivated: false,
         role: UserRole.TENANT,
         scopes
@@ -51,11 +54,12 @@ export const googleRegister = async (
     }
 
     const result = {
-      email,
+      email: email,
       firstName: given_name,
       lastName: family_name,
       role: tenant.role,
       scopes: scopes,
+      tenantId: tenantId,
     };
 
     const { access_token, refresh_token } = await generateTenantToken(

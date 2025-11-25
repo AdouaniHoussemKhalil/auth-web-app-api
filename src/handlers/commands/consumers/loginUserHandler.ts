@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from "express";
-import { CustomError } from "../../middleware/error/errorHandler";
-import { randomSixDigitCode } from "../../utils/random";
-import { generateConsumerToken } from "../../services/token/tokenService";
-import { SecondaryUserAccessMethodType } from "../../models/subdocuments/SecondaryAccessMethod";
-import { templates } from "../../services/email/models/Template";
-import { Recipient } from "../../services/email/models/Recipient";
-import sendTemplateEmail from "../../services/email/sendMails";
-import { Consumer } from "../../models/Consumer";
-import { compare, hash } from "../../services/hashing/hash";
+import { CustomError } from "../../../middleware/error/errorHandler";
+import { randomSixDigitCode } from "../../../utils/random";
+import { generateConsumerToken } from "../../../services/token/tokenService";
+import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
+import { templates } from "../../../services/email/models/Template";
+import { Recipient } from "../../../services/email/models/Recipient";
+import sendTemplateEmail from "../../../services/email/sendMails";
+import { Consumer } from "../../../models/Consumer";
+import { compare, hash } from "../../../services/hashing/hash";
 
 const loginUserHandler = async (
   request: Request,
@@ -45,7 +45,7 @@ const loginUserHandler = async (
       lastName: user.lastName,
       email: user.email,
       role: user.role,
-      scopes: user.scopes
+      scopes: user.scopes,
     };
 
     const appClient = (request as any).appClient;
@@ -56,10 +56,10 @@ const loginUserHandler = async (
 
     if (user.isMFAActivated) {
       const code = randomSixDigitCode();
-
+      const expiresInMs = appClient.mfaSettings?.expiryMinutes * 60 * 1000;
       user.secondaryUserAccess = {
         code: await hash(code),
-        expires: new Date(Date.now() + 15 * 60 * 1000),
+        expires: new Date(Date.now() + expiresInMs),
         type: SecondaryUserAccessMethodType.MFA,
       };
 
@@ -67,6 +67,8 @@ const loginUserHandler = async (
         email: user.email,
         fullName: `${user.firstName} ${user.lastName}`,
       };
+
+      await user.save();
 
       await sendTemplateEmail(templates.loginByCodeMFA.id, {
         recipient,
@@ -77,15 +79,11 @@ const loginUserHandler = async (
         },
         variable: code,
       });
-      await user.save();
-
       response.status(201).json({
         MFARequired: true,
         message:
           "MFA is required, Please check your email for the verification code.",
       });
-
-      return;
     }
 
     response.status(200).json({

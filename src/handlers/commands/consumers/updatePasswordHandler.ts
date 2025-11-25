@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { CustomError } from "../../middleware/error/errorHandler";
-import { compare, hash } from "../../services/hashing/hash";
-import { Consumer } from "../../models/Consumer";
+import { CustomError } from "../../../middleware/error/errorHandler";
+import { compare, hash } from "../../../services/hashing/hash";
+import { Consumer } from "../../../models/Consumer";
 
 const updatePasswordHandler = async (
   request: Request,
@@ -9,9 +9,10 @@ const updatePasswordHandler = async (
   next: NextFunction
 ) => {
   try {
-    const { userId, currentPassword, password } = request.body;
+    const { id } = request.params;
+    const { userId ,currentPassword, password, confirmPassword } = request.body;
 
-    if (!password || !userId || !currentPassword) {
+    if (!password || !userId ||  !id || !currentPassword || !confirmPassword) {
       const error = new Error(
         "Some required fields are missing"
       ) as CustomError;
@@ -19,7 +20,21 @@ const updatePasswordHandler = async (
       throw error;
     }
 
-    const user = await Consumer.findById(userId);
+    if (id !== userId) {
+      const error = new Error("User ID mismatch") as CustomError;
+      error.status = 400;
+      error.code = "userIdMismatch";
+      throw error;
+    }
+
+    if (password !== confirmPassword) {
+      const error = new Error("Passwords do not match") as CustomError;
+      error.status = 400;
+      error.code = "passwordsDoNotMatch";
+      throw error;
+    }
+
+    const user = await Consumer.findOne({ id: userId });
 
     if (!user) {
       const error = new Error("User not exist") as CustomError;
@@ -45,7 +60,7 @@ const updatePasswordHandler = async (
 
     return response.status(201).json({
       message: "update password successfuly",
-      isError: false,
+      isSuccess: true,
     });
   } catch (error) {
     next(error);

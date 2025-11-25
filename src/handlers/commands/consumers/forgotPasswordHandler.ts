@@ -1,12 +1,14 @@
 import { NextFunction, Request, Response } from "express";
-import { CustomError } from "../../middleware/error/errorHandler";
-import { randomSixDigitCode } from "../../utils/random";
-import { Recipient } from "../../services/email/models/Recipient";
-import sendTemplateEmail from "../../services/email/sendMails";
-import { templates } from "../../services/email/models/Template";
-import { Consumer } from "../../models/Consumer";
-import { SecondaryUserAccessMethodType } from "../../models/subdocuments/SecondaryAccessMethod";
-import { hash } from "../../services/hashing/hash";
+import { CustomError } from "../../../middleware/error/errorHandler";
+import { randomSixDigitCode } from "../../../utils/random";
+import { Recipient } from "../../../services/email/models/Recipient";
+import sendTemplateEmail from "../../../services/email/sendMails";
+import { templates } from "../../../services/email/models/Template";
+import { Consumer } from "../../../models/Consumer";
+import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
+import { hash } from "../../../services/hashing/hash";
+import ms from "ms";
+
 
 const forgotPasswordHandler = async (
   request: Request,
@@ -48,7 +50,9 @@ const forgotPasswordHandler = async (
       variable: resetCode,
     });
 
-    const resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
+    const expiresInMs = ms(appClient.resetTokenExpiresIn);
+
+    const resetPasswordExpires = new Date(Date.now() + expiresInMs);
     const resetPasswordToken = await hash(resetCode);
 
     user.secondaryUserAccess = {
