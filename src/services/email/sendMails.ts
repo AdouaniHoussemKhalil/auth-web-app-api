@@ -1,42 +1,54 @@
-import { Recipient } from "./models/recipient";
+import { Recipient } from "./models/Recipient";
+import { TemplateId, templates } from "./models/Template";
+
 const nodemailer = require("nodemailer");
 const config = require("config");
 
-export const sendMailAsync = async (
-  recipient: Recipient,
-  resetCode: string
-) => {
-  const smtp = config.get("email.smtp");
-  const emailInfos = config.get("email.info");
+const smtp = config.get("email.smtp");
 
-  const transporter = nodemailer.createTransport({
-    host: smtp.host,
-    port: smtp.port,
-    secure: smtp.secure,
-    auth: {
-      user: smtp.auth.user,
-      pass: smtp.auth.pass,
-    },
+const transporter = nodemailer.createTransport({
+  host: smtp.host,
+  port: smtp.port,
+  secure: smtp.secure,
+  auth: {
+    user: smtp.auth.user,
+    pass: smtp.auth.pass,
+  },
+});
+
+export default async function sendTemplateEmail<T extends TemplateId>(
+  templateId: T,
+  {
+    recipient,
+    appClientBranding,
+    variable,
+  }: {
+    recipient: Recipient;
+    appClientBranding?: {
+      appName?: string;
+      primaryColor?: string ;
+      logoUrl?: string;
+    };
+    variable?: string;
+  }
+) {
+  const template = templates[templateId];
+
+  if (!template) throw new Error(`Template "${templateId}" not found`);
+
+  const html = template.getHtml({
+    recipientFullName: recipient.fullName,
+    primaryColor: appClientBranding?.primaryColor ?? "#f6f3f3ff",
+    logoUrl: appClientBranding?.logoUrl,
+    variable: variable ?? "",
   });
-
-  const getHtml = (recipientFullName: string, resetCode: string): string => {
-    const html = `
-      <div style=${emailInfos.image}>
-        <img src="https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg" alt="Logo" style="width: 100px; height: auto; display: block; margin-bottom: 20px;">
-        <h3>Bonjour ${recipientFullName},</h3>
-        <p>Pour confirmer votre mot de passe, vous pouvez utiliser ce code de confirmation :</p>
-        <p style="font-size: 18px; font-weight: bold;">Code de confirmation: <strong>${resetCode}</strong></p>
-      </div>
-    `;
-    return html;
-  };
 
   const info = await transporter.sendMail({
-    from: "",
+    from: `"${appClientBranding?.appName ?? "Auth service"}" <no-reply@yourapp.com>`,
     to: recipient.email,
-    subject: emailInfos.subject,
-    html: getHtml(recipient.fullName, resetCode),
+    subject: template.subject,
+    html,
   });
 
-  console.log(info, "... sent mail to : ", recipient.email);
-};
+  return info;
+}
