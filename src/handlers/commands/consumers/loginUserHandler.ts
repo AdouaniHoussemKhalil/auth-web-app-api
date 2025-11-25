@@ -70,7 +70,7 @@ const loginUserHandler = async (
 
       await user.save();
 
-      await sendTemplateEmail(templates.loginByCodeMFA.id, {
+      sendTemplateEmail(templates.loginByCodeMFA.id, {
         recipient,
         appClientBranding: {
           appName: appClient.branding.appName,
@@ -78,7 +78,7 @@ const loginUserHandler = async (
           logoUrl: appClient.branding.logoUrl,
         },
         variable: code,
-      });
+      }).catch(err => console.error("Email error: ", err));
       response.status(201).json({
         MFARequired: true,
         message:
