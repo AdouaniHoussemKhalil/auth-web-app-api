@@ -31,7 +31,7 @@ const MFASettingsSchema = new Schema<MFASettings>({
 
 export interface IAppClient extends Document {
   id: string;
-  tenantId:  mongoose.Types.ObjectId;
+  tenantId:  string;
   name: string;
   secretKey: string;
   apiKey: string;
@@ -41,6 +41,7 @@ export interface IAppClient extends Document {
   isActive: boolean;
   allowedOrigins?: string[];
   redirectUrl: string;
+  logoutUrl?: string;
   resetPasswordUrl: string;
   branding?: AppClientBranding;
   scopes?: string[];
@@ -57,16 +58,17 @@ const AppClientBrandingSchema = new Schema<AppClientBranding>({
 
 const AppClientSchema = new Schema<IAppClient>({
   id: { type: String, required: true, unique: true },
-  tenantId: { type:  Schema.Types.ObjectId, ref: "Tenant" , required: true },
+  tenantId: { type:  String, required: true },
   name: { type: String, required: true },
   secretKey: { type: String, required: true },
   apiKey: { type: String, required: true },
-  tokenExpiresIn: { type: String, default: "1h" },
-  resetTokenExpiresIn: { type: String, default: "7d" },
+  tokenExpiresIn: { type: String, default: "7d" },
+  resetTokenExpiresIn: { type: String, default: "15m" },
   isActive: { type: Boolean, default: true },
   allowedOrigins: { type: [String], default: [] },
   mfaSettings: { type: MFASettingsSchema, default: {} },
   redirectUrl: { type: String, required: true },
+  logoutUrl: { type: String, required: false },
   resetPasswordUrl: { type: String, required: true },
   branding: { type: AppClientBrandingSchema, default: {} },
   scopes: { type: [String], default: [] },

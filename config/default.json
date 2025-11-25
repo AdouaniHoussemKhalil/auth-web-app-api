@@ -2,11 +2,37 @@
   "db": {
     "uri": ""
   },
+  "google": {
+    "clientId": ""
+  },
+  "tenant": {
+    "scopes": [
+      "consumer:create",
+      "consumer:read",
+      "consumer:update",
+      "consumer:delete",
+
+      "app:create",
+      "app:read",
+      "app:update",
+      "app:delete"
+    ]
+  },
+  "consumer":{
+    "scopes": [
+      "consumer:activateMFA",
+      "consumer:deactivateMFA",
+      "consumer:updateProfile",
+      "consumer:updatePassword"
+    ]
+  },
+  "aud": "tenant2025",
+
   "server": {
     "port": 8080
   },
   "front": {
-    "url":"http://localhost:3000"
+    "url": "http://localhost:3000"
   },
   "email": {
     "smtp": {
@@ -14,7 +40,7 @@
       "host": "smtp.gmail.com",
       "secure": true,
       "auth": {
-        "user": "",
+        "user": "houssemadouani09@gmail.com",
         "pass": ""
       }
     },

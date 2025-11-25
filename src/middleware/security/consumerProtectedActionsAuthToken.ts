@@ -15,7 +15,7 @@ export const consumerProtectedActionsAuthToken = async (req: Request, res: Respo
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = await verifyConsumerToken(token, appClient.appId, "access");
+    const decoded = await verifyConsumerToken(token, appClient.id, "access");
 
     (req as any).user = decoded;
     next();

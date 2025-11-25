@@ -1,13 +1,13 @@
 import { Response, Request, NextFunction } from "express";
-import { CustomError } from "../../middleware/error/errorHandler";
-import { Tenant } from "../../models/Tenant";
-import { compare, hash } from "../../services/hashing/hash";
-import { randomSixDigitCode } from "../../utils/random";
-import { SecondaryUserAccessMethodType } from "../../models/subdocuments/SecondaryAccessMethod";
-import { generateTenantToken } from "../../services/token/tokenService";
-import { Recipient } from "../../services/email/models/Recipient";
-import { templates } from "../../services/email/models/Template";
-import sendTemplateEmail from "../../services/email/sendMails";
+import { CustomError } from "../../../middleware/error/errorHandler";
+import { Tenant } from "../../../models/Tenant";
+import { compare, hash } from "../../../services/hashing/hash";
+import { randomSixDigitCode } from "../../../utils/random";
+import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
+import { generateTenantToken } from "../../../services/token/tokenService";
+import { Recipient } from "../../../services/email/models/Recipient";
+import { templates } from "../../../services/email/models/Template";
+import sendTemplateEmail from "../../../services/email/sendMails";
 
 const loginHandler = async (
   req: Request,
@@ -63,6 +63,7 @@ const loginHandler = async (
       role: tenant.role,
       scopes: tenant.scopes,
       secretKey: tenant.secretKey,
+      tenantId: tenant._id,
     };
 
     const { access_token, refresh_token } = await generateTenantToken(

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { CustomError } from "../../middleware/error/errorHandler";
-import { Consumer } from "../../models/Consumer";
-import { compare } from "../../services/hashing/hash";
+import { CustomError } from "../../../middleware/error/errorHandler";
+import { Consumer } from "../../../models/Consumer";
+import { compare } from "../../../services/hashing/hash";
 
 
 const verifyResetCodeHandler = async (

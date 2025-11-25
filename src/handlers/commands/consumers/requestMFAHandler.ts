@@ -1,16 +1,16 @@
 import { NextFunction, Request, Response } from "express";
-import { CustomError } from "../../middleware/error/errorHandler";
+import { CustomError } from "../../../middleware/error/errorHandler";
 import { randomUUID } from "crypto";
-import { Recipient } from "../../services/email/models/Recipient";
-import sendTemplateEmail from "../../services/email/sendMails";
-import { templates } from "../../services/email/models/Template";
-import { MFARequestType } from "../../models/enums/MFARequestType";
-import { MFAMethod } from "../../models/enums/MFAMethod";
-import { MFARequestStatus } from "../../models/enums/MFARequestStatus";
-import { MFARequest } from "../../models/MFARequest";
-import { hash } from "../../services/hashing/hash";
-import { Consumer } from "../../models/Consumer";
-import { randomSixDigitCode } from "../../utils/random";
+import { Recipient } from "../../../services/email/models/Recipient";
+import sendTemplateEmail from "../../../services/email/sendMails";
+import { templates } from "../../../services/email/models/Template";
+import { MFARequestType } from "../../../models/enums/MFARequestType";
+import { MFAMethod } from "../../../models/enums/MFAMethod";
+import { MFARequestStatus } from "../../../models/enums/MFARequestStatus";
+import { MFARequest } from "../../../models/MFARequest";
+import { hash } from "../../../services/hashing/hash";
+import { Consumer } from "../../../models/Consumer";
+import { randomSixDigitCode } from "../../../utils/random";
 
 const MFA_REQUEST_EXPIRATION_MINUTES = 15;
 
@@ -27,9 +27,9 @@ const requestMFAHandler = async (
   try {
     const appClient = (req as any).appClient;
 
-    const { userId, requestType} = req.body;
+    const { userId, requestType, email} = req.body;
 
-    const user = await Consumer.findById(userId);
+    const user = await Consumer.findOne({ email: email });
 
     if (!user) {
       const error = new Error("User not found") as CustomError;

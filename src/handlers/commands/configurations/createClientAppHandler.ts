@@ -1,7 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import AppClient from "../../models/AppClient";
+import AppClient from "../../../models/AppClient";
 import { randomUUID } from "crypto";
-import { templates } from "../../services/email/models/Template";
+import { templates } from "../../../services/email/models/Template";
+import { Tenant } from "../../../models/Tenant";
+import { CustomError } from "../../../middleware/error/errorHandler";
 
 const createClientAppHandler = async (
   req: Request,
@@ -20,14 +22,27 @@ const createClientAppHandler = async (
       supportEmail,
       logoUrl,
       primaryColor,
+      logoutUrl,
+      resetPasswordUrl,
     } = req.body;
 
+    const tenant = await Tenant.findOne({id: tenantId});
+    if (!tenant) {
+      const error = new Error("Tenant not exist") as CustomError;
+      error.status = 401;
+      error.code = "tenantNotExist";
+      throw error;
+    }
+
     const newAppClient = await AppClient.create({
-      tenantId,
+      id: randomUUID(),
+      tenantId: tenantId,
       name,
       tokenExpiresIn,
       resetTokenExpiresIn,
       redirectUrl,
+      resetPasswordUrl,
+      logoutUrl,
       appId: randomUUID().toString(),
       secretKey: randomUUID().toString(),
       apiKey: randomUUID().toString(),

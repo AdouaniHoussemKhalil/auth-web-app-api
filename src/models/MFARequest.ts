@@ -11,7 +11,7 @@ interface Verification {
 }
 
 export interface IMFARequest extends Document {
-  userId: mongoose.Types.ObjectId;
+  userId: string;
   clientId: string;
   type: MFARequestType;
   method: MFAMethod;
@@ -28,7 +28,7 @@ const VerificationSchema = new Schema<Verification>({
 });
 
 const MFARequestSchema = new Schema<IMFARequest>({
-  userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  userId: { type: String , required: true },
   clientId: { type: String, required: true },
   type: { type: String, enum: Object.values(MFARequestType), required: true },
   method: { type: String, enum: Object.values(MFAMethod), required: true },

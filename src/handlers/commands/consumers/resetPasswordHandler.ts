@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { CustomError } from "../../middleware/error/errorHandler";
-import { Consumer } from "../../models/Consumer";
-import { hash } from "../../services/hashing/hash";
+import { CustomError } from "../../../middleware/error/errorHandler";
+import { Consumer } from "../../../models/Consumer";
+import { hash } from "../../../services/hashing/hash";
 
 const resetPasswordHandler = async (
     request: Request,
@@ -9,9 +9,9 @@ const resetPasswordHandler = async (
     next: NextFunction
 ) => {
     try{
-        const {userId, password, confirmPassword } = request.body;
+        const {email, password, confirmPassword } = request.body;
 
-        if( !password || !userId || !confirmPassword) {
+        if( !password || !email || !confirmPassword) {
             const error = new Error("Some required fields are missing") as CustomError;
             error.status = 400;
             throw error;
@@ -24,7 +24,7 @@ const resetPasswordHandler = async (
             throw error;
         }
 
-        const user = await Consumer.findById(userId);
+        const user = await Consumer.findOne({ email });
 
         if (!user) {
             const error = new Error("User not exist") as CustomError;

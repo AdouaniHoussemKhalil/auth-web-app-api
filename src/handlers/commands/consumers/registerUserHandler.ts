@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import { CustomError } from "../../middleware/error/errorHandler";
-import { generateConsumerToken } from "../../services/token/tokenService";
-import { Consumer } from "../../models/Consumer";
-import { hash } from "../../services/hashing/hash";
+import { CustomError } from "../../../middleware/error/errorHandler";
+import { generateConsumerToken } from "../../../services/token/tokenService";
+import { Consumer } from "../../../models/Consumer";
+import { hash } from "../../../services/hashing/hash";
 
 const config = require("config");
 const scopes = config.get("consumer.scopes");
@@ -13,7 +13,6 @@ const registerUserHandler = async (
   next: NextFunction
 ) => {
   try {
-    const appId = (request as any).appClient.id;
 
     const {
       firstName,
@@ -21,7 +20,7 @@ const registerUserHandler = async (
       email,
       password,
       confirmPassword,
-      role = "user",
+      role = "consumer",
     } = request.body;
 
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
@@ -51,7 +50,8 @@ const registerUserHandler = async (
 
     const hashedPassword = await hash(password);
     const newUser = new Consumer({
-      clientId: appId,
+      id: crypto.randomUUID(),
+      clientId: appClient.appId,
       firstName,
       lastName,
       email,
@@ -70,7 +70,7 @@ const registerUserHandler = async (
       scopes: scopes
     };
 
-    const {access_token, refresh_token} = await generateConsumerToken({ jwtPayload: returnedUser }, appId);
+    const {access_token, refresh_token} = await generateConsumerToken({ jwtPayload: returnedUser }, appClient.appId);
 
     response.status(201).json({
       message: "User registered successfully",
