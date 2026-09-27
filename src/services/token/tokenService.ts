@@ -55,7 +55,7 @@ export const verifyConsumerToken = async (
   try {
     return jwt.verify(token, secret, { audience: appClient.name });
   } catch (err) {
-    throw new Error("Invalid or expired user token");
+    throw new Error("Invalid or expired user token", { cause: err });
   }
 };
 
@@ -75,8 +75,8 @@ export const verifyTenantToken = async (
   try {
     return jwt.verify(token, secret, { audience: AUDIENCE });
   } catch (err: any) {
-    if (err.name === "TokenExpiredError") throw new Error("Token expired");
-    throw new Error("Invalid token");
+    if (err.name === "TokenExpiredError") throw new Error("Token expired", { cause: err });
+    throw new Error("Invalid token", { cause: err });
   }
 };
 

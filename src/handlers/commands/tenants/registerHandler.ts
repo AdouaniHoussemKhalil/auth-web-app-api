@@ -1,4 +1,4 @@
-import e, { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { Tenant } from "../../../models/Tenant";
 import crypto from "crypto";
 import { CustomError } from "../../../middleware/error/errorHandler";

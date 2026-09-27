@@ -23,7 +23,7 @@ const requestMFAHandler = async (req: Request, res: Response, next: NextFunction
   try {
     const appClient = (req as any).appClient;
 
-    const { userId, requestType, email } = req.body;
+    const { requestType, email } = req.body;
 
     const user = await Consumer.findOne({ email: email });
 

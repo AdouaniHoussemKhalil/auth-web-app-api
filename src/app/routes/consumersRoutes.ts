@@ -2,7 +2,6 @@ import { Router } from "express";
 import { consumerActionsAuthToken } from "../../middleware/security/consumerActionsAuthToken";
 import validate from "../../middleware/validation/validateSchema";
 import { registerSchema } from "../../validation/users/registerSchema";
-import registerHandler from "../../handlers/commands/tenants/registerHandler";
 import { asyncHandler } from ".";
 import { loginSchema } from "../../validation/users/loginSchema";
 import loginUserHandler from "../../handlers/commands/consumers/loginUserHandler";
