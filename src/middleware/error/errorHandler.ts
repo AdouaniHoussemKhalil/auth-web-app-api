@@ -22,7 +22,7 @@ const errorHandler = (
         filed: err.path.join("."),
         message: err.message,
         code: err.code,
-        isSuccess: false
+        isSuccess: false,
       })),
     });
     return;
@@ -30,10 +30,10 @@ const errorHandler = (
 
   const status = error.status || 500;
   const message = error.message || "An unexpected error occurred";
-  const code = error.code || error.message.replace(' ','_');
+  const code = error.code || error.message.replace(" ", "_");
 
   response.status(status).json({
-    error: { status, code, message,isSuccess: false ,details: error.details || null },
+    error: { status, code, message, isSuccess: false, details: error.details || null },
   });
   next();
 };

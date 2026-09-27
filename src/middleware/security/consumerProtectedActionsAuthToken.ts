@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyConsumerToken } from "../../services/token/tokenService";
 
-export const consumerProtectedActionsAuthToken = async (req: Request, res: Response, next: NextFunction) => {
+export const consumerProtectedActionsAuthToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const authHeader = req.header("Authorization");
     const appClient = (req as any).appClient;
@@ -24,4 +28,3 @@ export const consumerProtectedActionsAuthToken = async (req: Request, res: Respo
     return res.status(403).json({ message: "Invalid or expired user token" });
   }
 };
-

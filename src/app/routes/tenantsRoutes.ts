@@ -106,11 +106,7 @@ tenantsRoutes.get(
  *         description: Echec de la création du tenant
  */
 
-tenantsRoutes.post(
-  "/register",
-  validate(registerSchema),
-  asyncHandler(registerHandler)
-);
+tenantsRoutes.post("/register", validate(registerSchema), asyncHandler(registerHandler));
 
 /**
  * @swagger
@@ -156,11 +152,7 @@ tenantsRoutes.post(
  *         description: Echec de la connexion du tenant
  */
 
-tenantsRoutes.post(
-  "/login",
-  validate(loginSchema),
-  asyncHandler(loginHandler)
-);
+tenantsRoutes.post("/login", validate(loginSchema), asyncHandler(loginHandler));
 
 /**
  * @swagger
@@ -181,10 +173,6 @@ tenantsRoutes.post(
  *         description: Echec de la connexion du tenant
  */
 
-tenantsRoutes.post(
-  "/google-register",
-  validate(googleLoginSchema),
-  asyncHandler(googleRegister)
-);
+tenantsRoutes.post("/google-register", validate(googleLoginSchema), asyncHandler(googleRegister));
 
 export default tenantsRoutes;

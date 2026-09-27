@@ -7,13 +7,8 @@ import { hash } from "../../../services/hashing/hash";
 const config = require("config");
 const scopes = config.get("consumer.scopes");
 
-const registerUserHandler = async (
-  request: Request,
-  response: Response,
-  next: NextFunction
-) => {
+const registerUserHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
-
     const {
       firstName,
       lastName,
@@ -24,15 +19,12 @@ const registerUserHandler = async (
     } = request.body;
 
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      const error = new Error(
-        "Some required fields are missing"
-      ) as CustomError;
+      const error = new Error("Some required fields are missing") as CustomError;
       error.status = 400;
       throw error;
     }
 
     const appClient = (request as any).appClient;
-
 
     if (await Consumer.findOne({ email, clientId: appClient.appId })) {
       const error = new Error("User already exists") as CustomError;
@@ -57,7 +49,7 @@ const registerUserHandler = async (
       email,
       password: hashedPassword,
       role,
-      scopes
+      scopes,
     });
     await newUser.save();
 
@@ -67,10 +59,13 @@ const registerUserHandler = async (
       lastName: newUser.lastName,
       email: newUser.email,
       role: newUser.role,
-      scopes: scopes
+      scopes: scopes,
     };
 
-    const {access_token, refresh_token} = await generateConsumerToken({ jwtPayload: returnedUser }, appClient.appId);
+    const { access_token, refresh_token } = await generateConsumerToken(
+      { jwtPayload: returnedUser },
+      appClient.appId
+    );
 
     response.status(201).json({
       message: "User registered successfully",

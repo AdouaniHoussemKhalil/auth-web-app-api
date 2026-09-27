@@ -8,11 +8,7 @@ import { MFAMethod } from "../../../models/enums/MFAMethod";
 import { IAppClient } from "../../../models/AppClient";
 import { Consumer } from "../../../models/Consumer";
 
-const activateMFAHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const activateMFAHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const appClient: IAppClient = (req as any).appClient;
 
@@ -52,9 +48,7 @@ const activateMFAHandler = async (
     const userMFARequest = await MFARequest.findOne(query);
 
     if (!userMFARequest) {
-      const error = new Error(
-        "Invalid or expired activation ID"
-      ) as CustomError;
+      const error = new Error("Invalid or expired activation ID") as CustomError;
       error.status = 400;
       throw error;
     }
@@ -62,9 +56,7 @@ const activateMFAHandler = async (
     if (Date.now() > userMFARequest.expiresAt.getTime()) {
       userMFARequest.status = MFARequestStatus.EXPIRED;
       await userMFARequest.save();
-      const error = new Error(
-        "Invalid or expired activation ID"
-      ) as CustomError;
+      const error = new Error("Invalid or expired activation ID") as CustomError;
       error.status = 400;
       throw error;
     }
@@ -78,9 +70,8 @@ const activateMFAHandler = async (
     await userMFARequest.save();
     await user.save();
 
-
     if (
-      appClient.branding?.templates.find(t => t.id === templates.successfullyActivatedMFA.id)
+      appClient.branding?.templates.find((t) => t.id === templates.successfullyActivatedMFA.id)
         ?.isActive
     ) {
       await sendTemplateEmail(templates.successfullyActivatedMFA.id, {
@@ -96,9 +87,7 @@ const activateMFAHandler = async (
       });
     }
 
-    res
-      .status(200)
-      .json({ message: "MFA activated successfully", isSuccess: true });
+    res.status(200).json({ message: "MFA activated successfully", isSuccess: true });
   } catch (error) {
     next(error);
   }

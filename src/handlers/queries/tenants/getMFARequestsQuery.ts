@@ -1,11 +1,7 @@
 import { NextFunction, Response, Request } from "express";
 import { MFARequest } from "../../../models/MFARequest";
 
-const getMFARequestsQuery = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const getMFARequestsQuery = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { appId, userId } = req.params;
     const mfaRequests = await MFARequest.find({

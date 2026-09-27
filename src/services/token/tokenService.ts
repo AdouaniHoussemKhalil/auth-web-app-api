@@ -26,17 +26,15 @@ export const generateConsumerToken = async (
   const accessExpiresIn = appClient.tokenExpiresIn || "1h";
   const refreshExpiresIn = appClient.resetTokenExpiresIn || "7d";
 
-  const access_token = jwt.sign(
-    { ...payload, appId, type: "access" },
-    accessSecret,
-    { expiresIn: accessExpiresIn, audience: appClient.name }
-  );
+  const access_token = jwt.sign({ ...payload, appId, type: "access" }, accessSecret, {
+    expiresIn: accessExpiresIn,
+    audience: appClient.name,
+  });
 
-  const refresh_token = jwt.sign(
-    { ...payload, appId, type: "refresh" },
-    refreshSecret,
-    { expiresIn: refreshExpiresIn, audience: appClient.name }
-  );
+  const refresh_token = jwt.sign({ ...payload, appId, type: "refresh" }, refreshSecret, {
+    expiresIn: refreshExpiresIn,
+    audience: appClient.name,
+  });
 
   return { access_token, refresh_token };
 };
@@ -47,8 +45,7 @@ export const verifyConsumerToken = async (
   type: "access" | "refresh" = "access"
 ): Promise<any> => {
   const appClient = await AppClient.findOne({ id: appId, isActive: true });
-  if (!appClient)
-    throw new Error("Invalid App Client for token verificationsss");
+  if (!appClient) throw new Error("Invalid App Client for token verificationsss");
 
   const secret = crypto
     .createHash("sha256")
@@ -102,10 +99,9 @@ export const generateTenantToken = async (
     audience: "tenant2025",
   });
 
-  const refresh_token = jwt.sign(
-    { ...payload, type: "refresh" },
-    refreshSecret,
-    { expiresIn: "7d", audience: "tenant2025" }
-  );
+  const refresh_token = jwt.sign({ ...payload, type: "refresh" }, refreshSecret, {
+    expiresIn: "7d",
+    audience: "tenant2025",
+  });
   return { access_token, refresh_token };
 };

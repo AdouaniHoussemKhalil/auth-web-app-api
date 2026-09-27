@@ -61,11 +61,7 @@ consumersRoutes.use(consumerActionsAuthToken);
  *       400:
  *         description: Données invalides
  */
-consumersRoutes.post(
-  "/auth/register",
-  validate(registerSchema),
-  asyncHandler(registerUserHandler)
-);
+consumersRoutes.post("/auth/register", validate(registerSchema), asyncHandler(registerUserHandler));
 
 /**
  * @swagger
@@ -96,11 +92,7 @@ consumersRoutes.post(
  *       401:
  *         description: Identifiants invalides
  */
-consumersRoutes.post(
-  "/auth/login",
-  validate(loginSchema),
-  asyncHandler(loginUserHandler)
-);
+consumersRoutes.post("/auth/login", validate(loginSchema), asyncHandler(loginUserHandler));
 
 /**
  * @swagger
@@ -451,7 +443,6 @@ consumersRoutes.post(
   consumerProtectedActionsAuthToken,
   asyncHandler(requestMFAHandler)
 );
-
 
 /**
  * @swagger

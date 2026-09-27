@@ -5,11 +5,7 @@ import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/Seco
 import { Consumer } from "../../../models/Consumer";
 import { compare } from "../../../services/hashing/hash";
 
-const loginByCodeMFAHandler = async (
-  request: Request,
-  response: Response,
-  next: NextFunction
-) => {
+const loginByCodeMFAHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
     const { email, mfaCode } = request.body;
 
@@ -57,8 +53,7 @@ const loginByCodeMFAHandler = async (
       throw error;
     }
 
-    
-    if (!await compare(mfaCode, code)) {
+    if (!(await compare(mfaCode, code))) {
       const error = new Error("Invalid MFA code") as CustomError;
       error.status = 400;
       error.code = "invalidMfaCode";
@@ -74,11 +69,14 @@ const loginByCodeMFAHandler = async (
       lastName: user.lastName,
       email: user.email,
       role: user.role,
-      scopes: user.scopes
+      scopes: user.scopes,
     };
 
     const appId = (request as any).appClient.id;
-    const {access_token, refresh_token} = await generateConsumerToken({ jwtPayload: returnedUser }, appId);
+    const { access_token, refresh_token } = await generateConsumerToken(
+      { jwtPayload: returnedUser },
+      appId
+    );
 
     response.status(200).json({
       returnedUser,

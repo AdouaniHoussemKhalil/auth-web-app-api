@@ -2,11 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 import AppClient from "../../models/AppClient";
 
-export const consumerActionsAuthToken = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const consumerActionsAuthToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const appId = req.headers["x-app-id"] as string;
     const appSecret = req.headers["x-app-secret"] as string;

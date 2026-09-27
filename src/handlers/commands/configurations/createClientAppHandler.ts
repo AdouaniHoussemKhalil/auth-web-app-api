@@ -5,11 +5,7 @@ import { templates } from "../../../services/email/models/Template";
 import { Tenant } from "../../../models/Tenant";
 import { CustomError } from "../../../middleware/error/errorHandler";
 
-const createClientAppHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const createClientAppHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
       tenantId,
@@ -26,7 +22,7 @@ const createClientAppHandler = async (
       resetPasswordUrl,
     } = req.body;
 
-    const tenant = await Tenant.findOne({id: tenantId});
+    const tenant = await Tenant.findOne({ id: tenantId });
     if (!tenant) {
       const error = new Error("Tenant not exist") as CustomError;
       error.status = 401;

@@ -10,7 +10,6 @@ const TemplateSchema = new Schema<Template>({
   isActive: { type: Boolean, default: true },
 });
 
-
 interface AppClientBranding {
   appName: string;
   primaryColor: string;
@@ -21,7 +20,7 @@ interface AppClientBranding {
 
 interface MFASettings {
   verificationMode: "code" | "link" | "both";
-  expiryMinutes: number; 
+  expiryMinutes: number;
 }
 
 const MFASettingsSchema = new Schema<MFASettings>({
@@ -31,13 +30,13 @@ const MFASettingsSchema = new Schema<MFASettings>({
 
 export interface IAppClient extends Document {
   id: string;
-  tenantId:  string;
+  tenantId: string;
   name: string;
   secretKey: string;
   apiKey: string;
   tokenExpiresIn?: string;
   resetTokenExpiresIn?: string;
-  mfaSettings?: MFASettings; 
+  mfaSettings?: MFASettings;
   isActive: boolean;
   allowedOrigins?: string[];
   redirectUrl: string;
@@ -58,7 +57,7 @@ const AppClientBrandingSchema = new Schema<AppClientBranding>({
 
 const AppClientSchema = new Schema<IAppClient>({
   id: { type: String, required: true, unique: true },
-  tenantId: { type:  String, required: true },
+  tenantId: { type: String, required: true },
   name: { type: String, required: true },
   secretKey: { type: String, required: true },
   apiKey: { type: String, required: true },

@@ -5,11 +5,7 @@ import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/Seco
 import { generateTenantToken } from "../../../services/token/tokenService";
 import { compare } from "../../../services/hashing/hash";
 
-const loginByMFACodeHandler = async (
-  request: Request,
-  response: Response,
-  next: NextFunction
-) => {
+const loginByMFACodeHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
     const { email, mfaCode } = request.body;
 
@@ -57,9 +53,8 @@ const loginByMFACodeHandler = async (
       throw error;
     }
 
-    
-    if (!await compare(mfaCode, code)) {
-      const error    = new Error("Invalid MFA code") as CustomError;
+    if (!(await compare(mfaCode, code))) {
+      const error = new Error("Invalid MFA code") as CustomError;
       error.status = 400;
       error.code = "invalidMfaCode";
       throw error;
@@ -74,10 +69,13 @@ const loginByMFACodeHandler = async (
       lastName: tenant.lastName,
       email: tenant.email,
       role: tenant.role,
-      scopes: tenant.scopes
+      scopes: tenant.scopes,
     };
 
-    const {access_token, refresh_token} = await generateTenantToken({ jwtPayload: result }, tenant.secretKey);
+    const { access_token, refresh_token } = await generateTenantToken(
+      { jwtPayload: result },
+      tenant.secretKey
+    );
 
     response.status(200).json({
       result,
@@ -92,4 +90,3 @@ const loginByMFACodeHandler = async (
 };
 
 export default loginByMFACodeHandler;
-    

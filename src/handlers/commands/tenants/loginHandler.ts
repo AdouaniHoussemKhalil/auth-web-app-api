@@ -9,11 +9,7 @@ import { Recipient } from "../../../services/email/models/Recipient";
 import { templates } from "../../../services/email/models/Template";
 import sendTemplateEmail from "../../../services/email/sendMails";
 
-const loginHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const loginHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {

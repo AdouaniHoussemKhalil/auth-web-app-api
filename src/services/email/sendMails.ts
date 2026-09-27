@@ -26,7 +26,7 @@ export default async function sendTemplateEmail<T extends TemplateId>(
     recipient: Recipient;
     appClientBranding?: {
       appName?: string;
-      primaryColor?: string ;
+      primaryColor?: string;
       logoUrl?: string;
     };
     variable?: string;
