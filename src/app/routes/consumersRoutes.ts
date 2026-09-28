@@ -132,7 +132,7 @@ consumersRoutes.post(
 
 /**
  * @swagger
- * /auth/verifyResetPasswordCode:
+ * /consumers/auth/verifyResetCode:
  *   post:
  *     summary: Vérifie le code de réinitialisation de mot de passe
  *     tags: [Consumers Authentication]
@@ -169,7 +169,7 @@ consumersRoutes.post(
 
 /**
  * @swagger
- * /auth/resetPassword:
+ * /consumers/auth/resetPassword:
  *   put:
  *     summary: Réinitialise le mot de passe d'un utilisateur
  *     tags: [Consumers Authentication]

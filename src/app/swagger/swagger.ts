@@ -122,7 +122,6 @@ const swaggerOptions = {
         ConsumerRequestMFA: {
           type: "object",
           properties: {
-            userId: { type: "string" },
             email: { type: "string" },
             requestType: {
               type: "string",
@@ -173,6 +172,7 @@ const swaggerOptions = {
             name: { type: "string" },
             tokenExpiresIn: { type: "string" },
             resetTokenExpiresIn: { type: "string" },
+            mfaVerificationMode: { type: "string", enum: ["code", "link"] },
             mfaExpiresIn: { type: "string" },
             redirectUrl: { type: "string" },
             resetPasswordUrl: { type: "string" },
@@ -181,15 +181,7 @@ const swaggerOptions = {
             logoUrl: { type: "string" },
             primaryColor: { type: "string" },
           },
-          required: [
-            "tenantId",
-            "name",
-            "tokenExpiresIn",
-            "resetTokenExpiresIn",
-            "mfaExpiresIn",
-            "redirectUrl",
-            "supportEmail",
-          ],
+          required: ["tenantId", "name", "redirectUrl", "resetPasswordUrl", "supportEmail"],
         },
         ClientAppUpdate: {
           type: "object",
