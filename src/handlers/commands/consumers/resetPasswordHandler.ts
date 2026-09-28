@@ -1,17 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../../middleware/error/errorHandler";
 import { Consumer } from "../../../models/Consumer";
+import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
 import { hash } from "../../../services/hashing/hash";
+import { consumeOneTimeCode } from "../../../services/security/oneTimeCode";
 
 const resetPasswordHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
-    const { email, password, confirmPassword } = request.body;
-
-    if (!password || !email || !confirmPassword) {
-      const error = new Error("Some required fields are missing") as CustomError;
-      error.status = 400;
-      throw error;
-    }
+    const { email, resetToken, password, confirmPassword } = request.body;
 
     if (password !== confirmPassword) {
       const error = new Error("Passwords do not match") as CustomError;
@@ -21,13 +17,15 @@ const resetPasswordHandler = async (request: Request, response: Response, next: 
     }
 
     const user = await Consumer.findOne({ email, clientId: (request as any).appClient.id });
-
     if (!user) {
-      const error = new Error("User not exist") as CustomError;
-      error.status = 401;
-      error.code = "userNotExist";
+      const error = new Error("Invalid code") as CustomError;
+      error.status = 400;
+      error.code = "invalidCode";
       throw error;
     }
+
+    // Jeton délivré par /verifyResetCode : sans lui, impossible de changer le mot de passe.
+    await consumeOneTimeCode(user, SecondaryUserAccessMethodType.ResetPassword, resetToken);
 
     user.password = await hash(password);
     await user.save();

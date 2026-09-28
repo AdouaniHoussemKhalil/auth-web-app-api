@@ -72,9 +72,12 @@ const swaggerOptions = {
             email: { type: "string" },
             password: { type: "string" },
             confirmPassword: { type: "string" },
-            currentPassword: { type: "string" },
+            resetToken: {
+              type: "string",
+              description: "Jeton renvoyé par /consumers/auth/verifyResetCode",
+            },
           },
-          required: ["email", "password", "confirmPassword", "currentPassword"],
+          required: ["email", "resetToken", "password", "confirmPassword"],
         },
         ConsumerUpdateProfile: {
           type: "object",
