@@ -8,6 +8,7 @@ import errorHandler, { notFoundHandler } from "./middleware/error/errorHandler";
 import consumersRoutes from "./app/routes/consumersRoutes";
 import tenantsRoutes from "./app/routes/tenantsRoutes";
 import configurationsRoutes from "./app/routes/configurationsRoutes";
+import healthRoutes from "./app/routes/healthRoutes";
 import { setupSwagger } from "./app/swagger/swagger";
 
 // "*" (défaut) autorise toutes les origines ; en production, lister les fronts autorisés.
@@ -26,6 +27,9 @@ export const createApp = () => {
 
   // Derrière un reverse proxy, nécessaire pour que la limitation par IP voie la vraie adresse.
   if (config.has("server.trustProxy")) app.set("trust proxy", config.get("server.trustProxy"));
+
+  // Avant les logs et la limitation de débit : sondes fréquentes, sans authentification.
+  app.use("/health", healthRoutes);
 
   app.use(
     pinoHttp({

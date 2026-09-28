@@ -270,6 +270,12 @@ base prend effet au prochain token (connexion ou refresh).
 
 ## Endpoints
 
+### Santé — `/health`
+
+| Méthode | Route     | Description                                                                                                                                                                                 |
+| ------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET     | `/health` | `200 { status: "ok", database: "up" }` si MongoDB est connecté, `503` sinon. Sans authentification ni limitation de débit, non journalisée ; utilisée par le health check Docker et Render. |
+
 ### Tenants — `/tenants`
 
 | Méthode | Route                                                 | Description                                                                                                                                                         |
