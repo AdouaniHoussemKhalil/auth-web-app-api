@@ -26,7 +26,7 @@ const registerUserHandler = async (request: Request, response: Response, next: N
 
     const appClient = (request as any).appClient;
 
-    if (await Consumer.findOne({ email, clientId: appClient.appId })) {
+    if (await Consumer.findOne({ email, clientId: appClient.id })) {
       const error = new Error("User already exists") as CustomError;
       error.status = 400;
       error.code = "userAlreadyExists";
@@ -43,7 +43,7 @@ const registerUserHandler = async (request: Request, response: Response, next: N
     const hashedPassword = await hash(password);
     const newUser = new Consumer({
       id: crypto.randomUUID(),
-      clientId: appClient.appId,
+      clientId: appClient.id,
       firstName,
       lastName,
       email,
@@ -64,7 +64,7 @@ const registerUserHandler = async (request: Request, response: Response, next: N
 
     const { access_token, refresh_token } = await generateConsumerToken(
       { jwtPayload: returnedUser },
-      appClient.appId
+      appClient.id
     );
 
     response.status(201).json({

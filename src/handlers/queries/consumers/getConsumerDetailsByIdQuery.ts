@@ -9,7 +9,7 @@ const getConsumerDetailsByIdQuery = async (req: Request, res: Response, next: Ne
       return res.status(400).json({ message: "Consumer ID is required" });
     }
 
-    const consumer = await Consumer.findOne({ id: id }).lean();
+    const consumer = await Consumer.findOne({ id, clientId: (req as any).appClient.id }).lean();
 
     if (!consumer) {
       return res.status(404).json({ message: "Consumer not found" });

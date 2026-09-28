@@ -22,7 +22,7 @@ const updateProfileHandler = async (request: Request, response: Response, next: 
       throw error;
     }
 
-    const user = await Consumer.findOne({ id: userId });
+    const user = await Consumer.findOne({ id: userId, clientId: (request as any).appClient.id });
 
     if (!user) {
       const error = new Error("User not exist") as CustomError;
@@ -33,11 +33,13 @@ const updateProfileHandler = async (request: Request, response: Response, next: 
 
     if (newFirstName) user.firstName = newFirstName;
     if (newLastName) user.lastName = newLastName;
-    user.save();
+    await user.save();
 
     const returnedUser = {
-      ...user,
-      password: undefined,
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
     };
 
     return response.status(200).json({
