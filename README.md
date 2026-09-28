@@ -373,7 +373,5 @@ Les autres erreurs métier ont un code explicite (`invalidCredentials`, `userAlr
 - Le mode MFA `both` du modèle n'est pas géré : il se comporte comme `code`.
 - Les access tokens sont sans état : après une déconnexion, un access token déjà émis reste valable jusqu'à son expiration
   (1 h par défaut). Les scopes des tokens ne sont pas encore vérifiés par les routes.
-- Un seul code en attente par utilisateur : demander un code (mot de passe oublié, vérification d'e-mail, connexion MFA)
-  remplace le code précédent.
 - Pas encore de provider d'e-mails HTTP : sur un hébergeur qui bloque SMTP (Render), aucun e-mail ne part (ticket #34).
 - L'image Docker n'a pas encore été testée en conditions réelles.

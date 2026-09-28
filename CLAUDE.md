@@ -86,7 +86,8 @@ Conventions :
   décodé dans `(req as any).user` et refuse (403) si `:id`, `body.userId` ou `body.email` ne sont pas ceux du token.
   `tenantProtectedActionsAuthToken` fait de même avec `:tenantId`, `body.tenantId` et vérifie que `:appId` appartient au tenant.
 - Codes à usage unique : toujours passer par `src/services/security/oneTimeCode.ts` (`setOneTimeCode` / `consumeOneTimeCode`),
-  qui gère hachage, expiration et limite de tentatives. Un seul code en attente par utilisateur (`secondaryUserAccess`).
+  qui gère hachage, expiration et limite de tentatives. Un code en attente par type
+  (`user.oneTimeCodes`, table indexée par type) ; l'ancien champ unique `secondaryUserAccess` n'est plus que lu.
 - Aléatoire : `src/utils/random.ts` (basé sur `crypto`) ; jamais `Math.random()`.
 - Logs : `logger` de `src/utils/logger.ts` (pino), jamais `console.*`. Passer les erreurs sous la clé `err`
   (`logger.error({ err }, "message")`). Pas besoin de journaliser avant `next(error)` : `errorHandler` journalise les 500

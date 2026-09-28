@@ -15,6 +15,7 @@ const getConsumerByIdQuery = async (req: Request, res: Response, next: NextFunct
     const {
       password: _password,
       secondaryUserAccess: _secondaryUserAccess,
+      oneTimeCodes: _oneTimeCodes,
       ...sanitizedConsumer
     } = consumer;
 
