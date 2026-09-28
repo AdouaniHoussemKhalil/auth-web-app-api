@@ -15,7 +15,11 @@ const getConsumerByIdQuery = async (req: Request, res: Response, next: NextFunct
       return res.status(404).json({ message: "Consumer not found" });
     }
 
-    const { password, ...sanitizedConsumer } = consumer;
+    const {
+      password: _password,
+      secondaryUserAccess: _secondaryUserAccess,
+      ...sanitizedConsumer
+    } = consumer;
 
     res.status(200).json(sanitizedConsumer);
   } catch (error) {
