@@ -50,6 +50,8 @@ export const googleRegister = async (req: Request, res: Response, next: NextFunc
         secretKey: crypto.randomBytes(64).toString("hex"),
         isActive: true,
         isByGoogle: true,
+        // Google a déjà vérifié l'adresse (email_verified).
+        isEmailVerified: true,
         isMFAActivated: false,
         role: UserRole.TENANT,
         scopes,

@@ -6,12 +6,18 @@ export const PASSWORD = "Password1!";
 
 export const sentEmails = () => sendTemplateEmail as jest.MockedFunction<typeof sendTemplateEmail>;
 
-// Dernière valeur (code ou lien) envoyée par e-mail pour un template donné.
-export const lastEmailVariable = (templateId: string): string => {
-  const call = [...sentEmails().mock.calls].reverse().find(([id]) => id === templateId);
-  if (!call) throw new Error(`No email sent with template ${templateId}`);
+// Dernière valeur (code ou lien) envoyée par e-mail pour un template donné, éventuellement à un destinataire donné.
+export const lastEmailVariable = (templateId: string, to?: string): string => {
+  const call = [...sentEmails().mock.calls]
+    .reverse()
+    .find(([id, { recipient }]) => id === templateId && (!to || recipient.email === to));
+  if (!call) throw new Error(`No email sent with template ${templateId}${to ? ` to ${to}` : ""}`);
   return call[1].variable as string;
 };
+
+// Nombre d'e-mails envoyés avec un template donné.
+export const emailsSent = (templateId: string) =>
+  sentEmails().mock.calls.filter(([id]) => id === templateId).length;
 
 export const registerTenant = async (app: Express, email = "tenant@test.com") => {
   const res = await request(app).post("/tenants/register").send({
@@ -20,12 +26,19 @@ export const registerTenant = async (app: Express, email = "tenant@test.com") =>
     email,
     password: PASSWORD,
     confirmPassword: PASSWORD,
-    role: "tenant",
   });
   expect(res.status).toBe(201);
+
+  // L'inscription n'ouvre pas de session : la vérification de l'e-mail renvoie les tokens.
+  const verified = await request(app)
+    .post("/tenants/verifyEmail")
+    .send({ email, code: lastEmailVariable("emailVerification", email) });
+  expect(verified.status).toBe(200);
+
   return {
     tenantId: res.body.tenantId as string,
-    accessToken: res.body.access_token as string,
+    accessToken: verified.body.access_token as string,
+    refreshToken: verified.body.refresh_token as string,
     email,
   };
 };

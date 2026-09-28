@@ -1,5 +1,5 @@
 import { IAppClient } from "../../models/AppClient";
-import { IConsumer } from "../../models/Consumer";
+import { IUser } from "../../models/User";
 import { SecondaryUserAccessMethodType } from "../../models/subdocuments/SecondaryAccessMethod";
 import { randomSixDigitCode } from "../../utils/random";
 import { setOneTimeCode } from "../security/oneTimeCode";
@@ -8,8 +8,11 @@ import sendTemplateEmail from "./sendMails";
 
 export const EMAIL_VERIFICATION_EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
-// Génère un code de vérification, l'enregistre sur le consumer et l'envoie par e-mail.
-export const sendEmailVerification = async (user: IConsumer, appClient: IAppClient) => {
+/**
+ * Génère un code de vérification, l'enregistre sur l'utilisateur et l'envoie par e-mail.
+ * Avec l'application du consumer, l'e-mail reprend son branding ; sans (tenant), le branding par défaut.
+ */
+export const sendEmailVerification = async (user: IUser, appClient?: IAppClient) => {
   const code = randomSixDigitCode();
   await setOneTimeCode(
     user,
@@ -21,7 +24,7 @@ export const sendEmailVerification = async (user: IConsumer, appClient: IAppClie
 
   await sendTemplateEmail(templates.emailVerification.id, {
     recipient: { email: user.email, fullName: `${user.firstName} ${user.lastName}` },
-    appClientBranding: {
+    appClientBranding: appClient && {
       appName: appClient.branding?.appName,
       primaryColor: appClient.branding?.primaryColor,
       logoUrl: appClient.branding?.logoUrl,

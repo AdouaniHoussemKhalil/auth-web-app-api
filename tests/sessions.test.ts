@@ -100,28 +100,19 @@ describe("Refresh token consumer", () => {
 });
 
 describe("Refresh token tenant", () => {
-  const registerWithTokens = () =>
-    request(app).post("/tenants/register").send({
-      firstName: "Alice",
-      lastName: "Tenant",
-      email: "tenant@test.com",
-      password: PASSWORD,
-      confirmPassword: PASSWORD,
-    });
-
   it("délivre une nouvelle paire puis la révoque à la déconnexion", async () => {
-    const registered = await registerWithTokens();
+    const tenant = await registerTenant(app);
 
     const refreshed = await request(app)
       .post("/tenants/refresh")
-      .send({ refreshToken: registered.body.refresh_token });
+      .send({ refreshToken: tenant.refreshToken });
     expect(refreshed.status).toBe(200);
 
     const apps = await request(app)
-      .get(`/config/apps/${registered.body.tenantId}`)
+      .get(`/config/apps/${tenant.tenantId}`)
       .set(
         tenantHeaders({
-          tenantId: registered.body.tenantId,
+          tenantId: tenant.tenantId,
           accessToken: refreshed.body.access_token,
         })
       );
@@ -203,7 +194,11 @@ describe("Vérification de l'adresse e-mail", () => {
       .send({ email: "nobody@test.com" });
 
     expect(existing.body).toEqual(unknown.body);
-    expect(sentEmails().mock.calls).toHaveLength(2);
+    const codesToUser = sentEmails().mock.calls.filter(
+      ([id, { recipient }]) =>
+        id === templates.emailVerification.id && recipient.email === "user@test.com"
+    );
+    expect(codesToUser).toHaveLength(2);
     expect(lastEmailVariable(templates.emailVerification.id)).not.toBe(firstCode);
   });
 

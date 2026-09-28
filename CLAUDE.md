@@ -38,6 +38,8 @@ les mêmes étapes plus `build` sur chaque PR vers `develop`.
   `lastEmailVariable(templates.x.id)` pour récupérer le code ou le lien envoyé.
 - Helpers de parcours dans `tests/helpers/fixtures.ts` : `registerTenant`, `createAppClient`, `registerConsumer`,
   `tenantHeaders`, `appHeaders`, `consumerHeaders`.
+- `registerTenant` inscrit le tenant **et vérifie son e-mail** (l'inscription seule ne renvoie aucun token) ; il renvoie
+  `accessToken` et `refreshToken`. `emailsSent(templateId)` compte les e-mails d'un template.
 - `config/test.json` désactive la limitation de débit.
 - `tests/swagger.test.ts` compte les routes documentées : **à mettre à jour quand on ajoute une route**.
 
@@ -88,6 +90,7 @@ Conventions :
 - Codes à usage unique : toujours passer par `src/services/security/oneTimeCode.ts` (`setOneTimeCode` / `consumeOneTimeCode`),
   qui gère hachage, expiration et limite de tentatives. Un code en attente par type
   (`user.oneTimeCodes`, table indexée par type) ; l'ancien champ unique `secondaryUserAccess` n'est plus que lu.
+- Migrations de données : idempotentes, dans `src/config/migrations.ts`, exécutées à chaque démarrage après la connexion.
 - Aléatoire : `src/utils/random.ts` (basé sur `crypto`) ; jamais `Math.random()`.
 - Logs : `logger` de `src/utils/logger.ts` (pino), jamais `console.*`. Passer les erreurs sous la clé `err`
   (`logger.error({ err }, "message")`). Pas besoin de journaliser avant `next(error)` : `errorHandler` journalise les 500
