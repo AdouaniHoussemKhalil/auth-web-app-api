@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { tenantProtectedActionsAuthToken } from "../../middleware/security/tenantProtectedActionsAuthToken";
 import { asyncHandler } from ".";
+import { authRateLimiter } from "../../middleware/security/rateLimiter";
 import getConsumersQuery from "../../handlers/queries/tenants/getConsumersQuery";
 import getConsumerByIdQuery from "../../handlers/queries/tenants/getConsumerByIdQuery";
 import { registerSchema } from "../../validation/users/registerSchema";
@@ -108,7 +109,12 @@ tenantsRoutes.get(
  *         description: Echec de la création du tenant
  */
 
-tenantsRoutes.post("/register", validate(registerSchema), asyncHandler(registerHandler));
+tenantsRoutes.post(
+  "/register",
+  authRateLimiter,
+  validate(registerSchema),
+  asyncHandler(registerHandler)
+);
 
 /**
  * @swagger
@@ -131,6 +137,7 @@ tenantsRoutes.post("/register", validate(registerSchema), asyncHandler(registerH
 
 tenantsRoutes.post(
   "/loginByMFACode",
+  authRateLimiter,
   validate(loginByCodeMFASchema),
   asyncHandler(loginByCodeMFAHandler)
 );
@@ -154,7 +161,7 @@ tenantsRoutes.post(
  *         description: Echec de la connexion du tenant
  */
 
-tenantsRoutes.post("/login", validate(loginSchema), asyncHandler(loginHandler));
+tenantsRoutes.post("/login", authRateLimiter, validate(loginSchema), asyncHandler(loginHandler));
 
 /**
  * @swagger
@@ -175,6 +182,11 @@ tenantsRoutes.post("/login", validate(loginSchema), asyncHandler(loginHandler));
  *         description: Echec de la connexion du tenant
  */
 
-tenantsRoutes.post("/google-register", validate(googleLoginSchema), asyncHandler(googleRegister));
+tenantsRoutes.post(
+  "/google-register",
+  authRateLimiter,
+  validate(googleLoginSchema),
+  asyncHandler(googleRegister)
+);
 
 export default tenantsRoutes;
