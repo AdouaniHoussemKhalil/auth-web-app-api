@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import AppClient from "../../../models/AppClient";
 import { randomUUID } from "crypto";
+import ms from "ms";
 import { templates } from "../../../services/email/models/Template";
 import { Tenant } from "../../../models/Tenant";
 import { CustomError } from "../../../middleware/error/errorHandler";
@@ -39,14 +40,11 @@ const createClientAppHandler = async (req: Request, res: Response, next: NextFun
       redirectUrl,
       resetPasswordUrl,
       logoutUrl,
-      appId: randomUUID().toString(),
       secretKey: randomUUID().toString(),
       apiKey: randomUUID().toString(),
       mfaSettings: {
-        verification: {
-          type: mfaVerificationMode,
-          expiresIn: mfaExpiresIn,
-        },
+        verificationMode: mfaVerificationMode ?? "code",
+        expiryMinutes: mfaExpiresIn ? Math.ceil(ms(mfaExpiresIn as ms.StringValue) / 60000) : 15,
       },
       isActive: true,
       branding: {
