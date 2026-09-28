@@ -78,4 +78,7 @@ const AppClientSchema = new Schema<IAppClient>({
   createdAt: { type: Date, default: Date.now },
 });
 
+// Liste des applications d'un tenant.
+AppClientSchema.index({ tenantId: 1, isActive: -1, createdAt: -1 });
+
 export default mongoose.model<IAppClient>("AppClient", AppClientSchema);
