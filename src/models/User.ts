@@ -16,6 +16,9 @@ export interface IUser extends Document {
   isActive: boolean;
   isByGoogle?: boolean;
   isEmailVerified?: boolean;
+  // Codes à usage unique en attente, un par type (MFA, mot de passe oublié...).
+  oneTimeCodes?: Map<string, PendingCode>;
+  // Ancien emplacement unique, encore lu pour les codes émis avant la migration.
   secondaryUserAccess?: SecondaryUserAccessMethod;
   isMFAActivated?: boolean;
   role?: UserRole;
@@ -30,6 +33,17 @@ const secondaryUserAccess = new Schema<SecondaryUserAccessMethod>({
   type: { type: String, enum: Object.values(SecondaryUserAccessMethodType), required: true },
   attempts: { type: Number, default: 0 },
 });
+
+export type PendingCode = { code: string; expires: Date; attempts: number };
+
+const pendingCode = new Schema<PendingCode>(
+  {
+    code: { type: String, required: true },
+    expires: { type: Date, required: true },
+    attempts: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
 
 export const UserSchema: Schema = new Schema<IUser>({
   id: { type: String, required: true },
@@ -49,6 +63,7 @@ export const UserSchema: Schema = new Schema<IUser>({
   isEmailVerified: { type: Boolean, required: false, default: false },
   usedMFAMethod: { type: String, enum: Object.values(MFAMethod), required: false },
   isMFAActivated: { type: Boolean, required: false, default: false },
+  oneTimeCodes: { type: Map, of: pendingCode, default: {} },
   secondaryUserAccess: secondaryUserAccess,
   createdOn: {
     type: Date,

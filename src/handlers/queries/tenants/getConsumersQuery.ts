@@ -10,7 +10,12 @@ const getConsumersQuery = async (req: Request, res: Response, next: NextFunction
       .lean();
 
     const sanitizedConsumers = consumers.map(
-      ({ password: _password, secondaryUserAccess: _secondaryUserAccess, ...rest }) => rest
+      ({
+        password: _password,
+        secondaryUserAccess: _secondaryUserAccess,
+        oneTimeCodes: _oneTimeCodes,
+        ...rest
+      }) => rest
     );
 
     res.status(200).json(sanitizedConsumers);

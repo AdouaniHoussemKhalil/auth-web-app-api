@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "crypto";
 import { CustomError } from "../../middleware/error/errorHandler";
-import { IUser } from "../../models/User";
+import { IUser, PendingCode } from "../../models/User";
 import { SecondaryUserAccessMethodType } from "../../models/subdocuments/SecondaryAccessMethod";
 import { compare, hash } from "../hashing/hash";
 
@@ -21,23 +21,51 @@ export const safeEqual = (a: string, b: string) => {
   return bufferA.length === bufferB.length && timingSafeEqual(bufferA, bufferB);
 };
 
-// Enregistre un code à usage unique (haché) sur l'utilisateur. Ne sauvegarde pas.
+const codesOf = (user: IUser) => {
+  if (!user.oneTimeCodes) user.oneTimeCodes = new Map();
+  return user.oneTimeCodes;
+};
+
+// Code en attente pour ce type ; l'ancien emplacement unique est encore lu pour les codes émis avant la migration.
+const pendingCodeOf = (
+  user: IUser,
+  type: SecondaryUserAccessMethodType
+): PendingCode | undefined => {
+  const pending = user.oneTimeCodes?.get(type);
+  if (pending) return pending;
+
+  const legacy = user.secondaryUserAccess;
+  if (legacy?.type === type && legacy.code && legacy.expires) {
+    return { code: legacy.code, expires: legacy.expires, attempts: legacy.attempts ?? 0 };
+  }
+  return undefined;
+};
+
+const clearCode = (user: IUser, type: SecondaryUserAccessMethodType) => {
+  codesOf(user).delete(type);
+  if (user.secondaryUserAccess?.type === type) user.secondaryUserAccess = undefined;
+};
+
+/**
+ * Enregistre un code à usage unique (haché) pour ce type. Remplace le code précédent du même type
+ * sans toucher aux codes des autres types. Ne sauvegarde pas.
+ */
 export const setOneTimeCode = async (
   user: IUser,
   type: SecondaryUserAccessMethodType,
   code: string,
   expiresInMs: number
 ) => {
-  user.secondaryUserAccess = {
+  clearCode(user, type);
+  codesOf(user).set(type, {
     code: await hash(code),
     expires: new Date(Date.now() + expiresInMs),
-    type,
     attempts: 0,
-  };
+  });
 };
 
 /**
- * Vérifie un code à usage unique : type, expiration et nombre de tentatives.
+ * Vérifie le code en attente pour ce type : expiration et nombre de tentatives.
  * Le code est consommé en cas de succès ; il est invalidé après MAX_CODE_ATTEMPTS échecs.
  */
 export const consumeOneTimeCode = async (
@@ -45,29 +73,28 @@ export const consumeOneTimeCode = async (
   type: SecondaryUserAccessMethodType,
   code: string
 ) => {
-  const access = user.secondaryUserAccess;
+  const pending = pendingCodeOf(user, type);
 
-  if (!access?.code || !access.expires || access.type !== type) {
+  if (!pending) {
     throw codeError("No pending code", "noPendingCode");
   }
 
-  if (Date.now() > access.expires.getTime()) {
-    user.secondaryUserAccess = undefined;
+  if (Date.now() > pending.expires.getTime()) {
+    clearCode(user, type);
     await user.save();
     throw codeError("Expired code", "expiredCode");
   }
 
-  if (!(await compare(code, access.code))) {
-    const attempts = (access.attempts ?? 0) + 1;
-    if (attempts >= MAX_CODE_ATTEMPTS) {
-      user.secondaryUserAccess = undefined;
-    } else {
-      access.attempts = attempts;
+  if (!(await compare(code, pending.code))) {
+    const attempts = pending.attempts + 1;
+    clearCode(user, type);
+    if (attempts < MAX_CODE_ATTEMPTS) {
+      codesOf(user).set(type, { code: pending.code, expires: pending.expires, attempts });
     }
     await user.save();
     throw codeError("Invalid code", "invalidCode");
   }
 
-  user.secondaryUserAccess = undefined;
+  clearCode(user, type);
   await user.save();
 };
