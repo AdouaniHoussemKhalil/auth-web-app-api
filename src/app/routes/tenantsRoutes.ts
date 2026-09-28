@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { tenantProtectedActionsAuthToken } from "../../middleware/security/tenantProtectedActionsAuthToken";
 import { asyncHandler } from ".";
+import { requireScope } from "../../middleware/security/requireScope";
 import { authRateLimiter } from "../../middleware/security/rateLimiter";
 import getConsumersQuery from "../../handlers/queries/tenants/getConsumersQuery";
 import getConsumerByIdQuery from "../../handlers/queries/tenants/getConsumerByIdQuery";
@@ -62,6 +63,7 @@ const tenantsRoutes = Router();
 tenantsRoutes.get(
   "/:tenantId/app/:appId/consumers",
   tenantProtectedActionsAuthToken,
+  requireScope("consumer:read"),
   asyncHandler(getConsumersQuery)
 );
 
@@ -102,6 +104,7 @@ tenantsRoutes.get(
 tenantsRoutes.get(
   "/:tenantId/app/:appId/consumers/:consumerId",
   tenantProtectedActionsAuthToken,
+  requireScope("consumer:read"),
   asyncHandler(getConsumerByIdQuery)
 );
 

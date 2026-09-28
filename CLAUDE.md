@@ -71,7 +71,8 @@ Pour ajouter un endpoint :
 1. Créer le schéma Zod dans `src/validation/<domaine>/<action>Schema.ts`.
 2. Créer le handler dans `src/handlers/commands|queries/<domaine>/<action>Handler.ts` : signature `(req, res, next)`, `export default`.
 3. Déclarer la route dans `src/app/routes/<domaine>Routes.ts` : `authRateLimiter` si la route est sensible (connexion, code,
-   mot de passe), `validate(schema)`, le middleware de sécurité adapté, puis `asyncHandler(handler)`.
+   mot de passe), `validate(schema)`, le middleware de sécurité adapté, `requireScope("...")` si la route est
+   protégée, puis `asyncHandler(handler)`. Documenter le scope dans le tableau « Scopes » du README.
 4. Documenter la route (bloc `@swagger`), ajouter le schéma de corps dans `swagger.ts` et mettre à jour `tests/swagger.test.ts`.
 5. Ajouter les tests d'intégration.
 
