@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import crypto from "crypto";
 import AppClient from "../../models/AppClient";
 import { Tenant } from "../../models/Tenant";
@@ -23,8 +23,8 @@ export const generateConsumerToken = async (
     .update(appClient.secretKey + "_refresh")
     .digest("hex");
 
-  const accessExpiresIn = appClient.tokenExpiresIn || "1h";
-  const refreshExpiresIn = appClient.resetTokenExpiresIn || "7d";
+  const accessExpiresIn = (appClient.tokenExpiresIn || "1h") as SignOptions["expiresIn"];
+  const refreshExpiresIn = (appClient.resetTokenExpiresIn || "7d") as SignOptions["expiresIn"];
 
   const access_token = jwt.sign({ ...payload, appId, type: "access" }, accessSecret, {
     expiresIn: accessExpiresIn,
