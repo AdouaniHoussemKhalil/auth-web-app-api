@@ -3,7 +3,7 @@ import { CustomError } from "../../../middleware/error/errorHandler";
 import sendTemplateEmail from "../../../services/email/sendMails";
 import { templates } from "../../../services/email/models/Template";
 import { MFARequestType } from "../../../models/enums/MFARequestType";
-import { findPendingMFARequest } from "../../../services/mfa/findPendingMFARequest";
+import { verifyMFARequest } from "../../../services/mfa/mfaRequests";
 import { MFARequestStatus } from "../../../models/enums/MFARequestStatus";
 import { IAppClient } from "../../../models/AppClient";
 import { Consumer } from "../../../models/Consumer";
@@ -33,26 +33,12 @@ const deactivateMFAHandler = async (req: Request, res: Response, next: NextFunct
       throw error;
     }
 
-    const userMFARequest = await findPendingMFARequest(
+    const userMFARequest = await verifyMFARequest(
       appClient,
       userId,
       MFARequestType.DEACTIVATE,
       deactivationId
     );
-
-    if (!userMFARequest) {
-      const error = new Error("Invalid or expired deactivation token") as CustomError;
-      error.status = 400;
-      throw error;
-    }
-
-    if (Date.now() > userMFARequest.expiresAt.getTime()) {
-      userMFARequest.status = MFARequestStatus.EXPIRED;
-      await userMFARequest.save();
-      const error = new Error("Invalid or expired deactivation token") as CustomError;
-      error.status = 400;
-      throw error;
-    }
 
     user.isMFAActivated = false;
     user.usedMFAMethod = undefined;

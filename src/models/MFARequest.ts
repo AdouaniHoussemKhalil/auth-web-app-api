@@ -17,6 +17,7 @@ export interface IMFARequest extends Document {
   verification: Verification;
   expiresAt: Date;
   status: MFARequestStatus;
+  attempts: number;
   createdAt: Date;
 }
 
@@ -38,6 +39,7 @@ const MFARequestSchema = new Schema<IMFARequest>({
     enum: Object.values(MFARequestStatus),
     default: MFARequestStatus.PENDING,
   },
+  attempts: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });
 

@@ -3,7 +3,7 @@ import { CustomError } from "../../../middleware/error/errorHandler";
 import sendTemplateEmail from "../../../services/email/sendMails";
 import { templates } from "../../../services/email/models/Template";
 import { MFARequestType } from "../../../models/enums/MFARequestType";
-import { findPendingMFARequest } from "../../../services/mfa/findPendingMFARequest";
+import { verifyMFARequest } from "../../../services/mfa/mfaRequests";
 import { MFARequestStatus } from "../../../models/enums/MFARequestStatus";
 import { MFAMethod } from "../../../models/enums/MFAMethod";
 import { IAppClient } from "../../../models/AppClient";
@@ -35,26 +35,12 @@ const activateMFAHandler = async (req: Request, res: Response, next: NextFunctio
       throw error;
     }
 
-    const userMFARequest = await findPendingMFARequest(
+    const userMFARequest = await verifyMFARequest(
       appClient,
       userId,
       MFARequestType.ACTIVATE,
       activationId
     );
-
-    if (!userMFARequest) {
-      const error = new Error("Invalid or expired activation ID") as CustomError;
-      error.status = 400;
-      throw error;
-    }
-
-    if (Date.now() > userMFARequest.expiresAt.getTime()) {
-      userMFARequest.status = MFARequestStatus.EXPIRED;
-      await userMFARequest.save();
-      const error = new Error("Invalid or expired activation ID") as CustomError;
-      error.status = 400;
-      throw error;
-    }
 
     user.isMFAActivated = true;
     user.usedMFAMethod = MFAMethod.EMAIL;
