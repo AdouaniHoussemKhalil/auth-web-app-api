@@ -326,7 +326,7 @@ curl -X POST http://localhost:8080/consumers/auth/login \
 
 ## Format des réponses d'erreur
 
-Erreurs métier (via le gestionnaire global) :
+Toutes les erreurs, y compris celles des middlewares de sécurité et de la limitation de débit, ont le même format :
 
 ```json
 {
@@ -340,12 +340,24 @@ Erreurs métier (via le gestionnaire global) :
 }
 ```
 
-- Erreurs de validation Zod : `status` 400, `message` `"Validation Error"`, `details` = `[{ "field": "...", "message": "..." }]`.
-- Codes à usage unique : `invalidCode`, `expiredCode`, `noPendingCode` ; demandes MFA : `invalidMfaVerification` ;
-  sessions : `invalidRefreshToken` ; e-mail : `emailNotVerified`.
-- Erreurs internes : `status` 500, `code` `"internalError"`, message générique.
-- Les middlewares de sécurité et la limitation de débit répondent directement avec `{ "message": "...", "isSuccess": false }`
-  (400, 401, 403, 404 ou 429).
+| Code                                               | Statut    | Cas                                                                                               |
+| -------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------- |
+| `validationError`                                  | 400       | Corps invalide ; `details` = `[{ "field": "...", "message": "..." }]`                             |
+| `invalidJson`                                      | 400       | Corps qui n'est pas un JSON valide                                                                |
+| `missingAppCredentials` / `invalidAppClient`       | 400 / 403 | En-têtes `x-app-id` / `x-app-secret` absents, ou application inconnue, inactive ou mauvais secret |
+| `missingToken` / `invalidToken`                    | 401 / 403 | En-tête `Authorization` absent, ou token invalide ou expiré                                       |
+| `missingTenantId`                                  | 400       | En-tête `X-Tenant-Id` absent                                                                      |
+| `forbiddenTenant` / `forbiddenUser`                | 403       | Ressource d'un autre tenant ou d'un autre consumer                                                |
+| `appNotFound`, `consumerNotFound`, `routeNotFound` | 404       | Ressource ou route inexistante                                                                    |
+| `tooManyRequests`                                  | 429       | Limitation de débit                                                                               |
+| `invalidCode`, `expiredCode`, `noPendingCode`      | 400       | Codes à usage unique                                                                              |
+| `invalidMfaVerification`                           | 400       | Demande MFA invalide ou expirée                                                                   |
+| `invalidRefreshToken`                              | 401       | Refresh token invalide, expiré, déjà utilisé ou révoqué                                           |
+| `emailNotVerified`                                 | 403       | Connexion avant vérification de l'e-mail                                                          |
+| `internalError`                                    | 500       | Erreur interne (message générique, détail uniquement dans les logs)                               |
+
+Les autres erreurs métier ont un code explicite (`invalidCredentials`, `userAlreadyExists`, `passwordsDoNotMatch`…) ;
+à défaut, le code dépend du statut (`badRequest`, `unauthorized`, `forbidden`, `notFound`…).
 
 ## Limites connues
 
@@ -355,5 +367,4 @@ Erreurs métier (via le gestionnaire global) :
 - Un seul code en attente par utilisateur : demander un code (mot de passe oublié, vérification d'e-mail, connexion MFA)
   remplace le code précédent.
 - Pas encore de provider d'e-mails HTTP : sur un hébergeur qui bloque SMTP (Render), aucun e-mail ne part (ticket #34).
-- Les middlewares de sécurité répondent avec leur propre format au lieu de passer par le gestionnaire d'erreurs global.
 - L'image Docker n'a pas encore été testée en conditions réelles.

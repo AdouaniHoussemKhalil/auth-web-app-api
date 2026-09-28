@@ -7,10 +7,6 @@ const getAppClientsQuery = async (req: Request, res: Response, next: NextFunctio
   try {
     const { tenantId } = req.params;
 
-    if (!tenantId) {
-      return res.status(400).json({ message: "tenantId is required" });
-    }
-
     const tenant = await Tenant.findOne({ id: tenantId });
 
     if (!tenant) {

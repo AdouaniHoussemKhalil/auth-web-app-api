@@ -7,10 +7,6 @@ const getAppClientByIdQuery = async (req: Request, res: Response, next: NextFunc
   try {
     const { tenantId, appId } = req.params;
 
-    if (!tenantId || !appId) {
-      return res.status(400).json({ message: "tenantId and appId are required" });
-    }
-
     const tenant = await Tenant.findOne({ id: tenantId });
     if (!tenant) {
       const error = new Error("Tenant not exist") as CustomError;

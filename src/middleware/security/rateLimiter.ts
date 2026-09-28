@@ -1,5 +1,6 @@
 import config from "config";
 import { ipKeyGenerator, rateLimit } from "express-rate-limit";
+import { createError } from "../error/errorHandler";
 
 const setting = <T>(key: string, fallback: T): T =>
   config.has(key) ? config.get<T>(key) : fallback;
@@ -12,7 +13,8 @@ export const createRateLimiter = (options: { windowMs: number; max: number }) =>
     legacyHeaders: false,
     // Les applications clientes appellent depuis leur back-end : on compte par application et par IP.
     keyGenerator: (req) => `${req.headers["x-app-id"] ?? "tenant"}:${ipKeyGenerator(req.ip ?? "")}`,
-    message: { message: "Too many requests, please try again later", isSuccess: false },
+    handler: (_req, _res, next) =>
+      next(createError(429, "tooManyRequests", "Too many requests, please try again later")),
   });
 
 const noLimit: ReturnType<typeof rateLimit> = Object.assign(

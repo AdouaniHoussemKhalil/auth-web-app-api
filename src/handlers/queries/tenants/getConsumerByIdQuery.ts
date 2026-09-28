@@ -1,3 +1,4 @@
+import { createError } from "../../../middleware/error/errorHandler";
 import { Request, Response, NextFunction } from "express";
 import { Consumer } from "../../../models/Consumer";
 
@@ -5,14 +6,10 @@ const getConsumerByIdQuery = async (req: Request, res: Response, next: NextFunct
   try {
     const { consumerId, appId } = req.params;
 
-    if (!consumerId) {
-      return res.status(400).json({ message: "Consumer ID is required" });
-    }
-
     const consumer = await Consumer.findOne({ id: consumerId, clientId: appId }).lean();
 
     if (!consumer) {
-      return res.status(404).json({ message: "Consumer not found" });
+      return next(createError(404, "consumerNotFound", "Consumer not found"));
     }
 
     const {

@@ -1,3 +1,4 @@
+import { createError } from "../../../middleware/error/errorHandler";
 import { Request, Response, NextFunction } from "express";
 import { OAuth2Client } from "google-auth-library";
 import { Tenant } from "../../../models/Tenant";
@@ -22,7 +23,7 @@ export const googleRegister = async (req: Request, res: Response, next: NextFunc
     });
 
     const payload = ticket.getPayload();
-    if (!payload) return res.status(400).json({ message: "Invalid token" });
+    if (!payload) return next(createError(401, "invalidGoogleToken", "Invalid Google token"));
 
     const { email, given_name, family_name } = payload;
 
