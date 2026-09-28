@@ -191,7 +191,8 @@ Pour recevoir de vrais e-mails en local avec Gmail :
 ### Migrations au démarrage
 
 Des migrations de données idempotentes s'exécutent à chaque démarrage (`src/config/migrations.ts`). Actuellement : les
-tenants créés avant la vérification d'e-mail sont considérés comme vérifiés, pour ne pas être bloqués à la connexion.
+tenants créés avant la vérification d'e-mail sont considérés comme vérifiés, pour ne pas être bloqués à la connexion ;
+le mode MFA `both` (retiré) est remplacé par `code`.
 
 ### Réglages d'une application cliente
 
@@ -409,6 +410,5 @@ Les autres erreurs métier ont un code explicite (`invalidCredentials`, `userAlr
 
 ## Limites connues
 
-- Le mode MFA `both` du modèle n'est pas géré : il se comporte comme `code`.
 - Pas encore de provider d'e-mails HTTP : sur un hébergeur qui bloque SMTP (Render), aucun e-mail ne part (ticket #34).
 - L'image Docker n'a pas encore été testée en conditions réelles.

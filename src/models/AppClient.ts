@@ -19,12 +19,12 @@ interface AppClientBranding {
 }
 
 interface MFASettings {
-  verificationMode: "code" | "link" | "both";
+  verificationMode: "code" | "link";
   expiryMinutes: number;
 }
 
 const MFASettingsSchema = new Schema<MFASettings>({
-  verificationMode: { type: String, enum: ["code", "link", "both"], default: "code" },
+  verificationMode: { type: String, enum: ["code", "link"], default: "code" },
   expiryMinutes: { type: Number, default: 15 },
 });
 

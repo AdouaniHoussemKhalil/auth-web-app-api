@@ -46,7 +46,6 @@ const requestMFAHandler = async (req: Request, res: Response, next: NextFunction
       fullName: `${user.firstName} ${user.lastName}`,
     };
 
-    // Le mode "both" n'est pas encore géré : il retombe sur le code.
     const verificationMode = appClient.mfaSettings?.verificationMode === "link" ? "link" : "code";
     const verificationCode = verificationMode === "code" ? randomSixDigitCode() : undefined;
     const verificationLinkId = verificationMode === "link" ? randomToken() : undefined;
