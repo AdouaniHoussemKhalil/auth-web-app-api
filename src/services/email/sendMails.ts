@@ -1,20 +1,23 @@
+import config from "config";
 import { Recipient } from "./models/Recipient";
 import { TemplateId, templates } from "./models/Template";
+import { createEmailSender } from "./emailSender";
+import { SmtpSettings } from "./providers";
 
-const nodemailer = require("nodemailer");
-const config = require("config");
+const setting = <T>(key: string): T | undefined =>
+  config.has(key) ? config.get<T>(key) : undefined;
 
-const smtp = config.get("email.smtp");
+const smtp = setting<SmtpSettings>("email.smtp");
 
-const transporter = nodemailer.createTransport({
-  host: smtp.host,
-  port: smtp.port,
-  secure: smtp.secure,
-  auth: {
-    user: smtp.auth.user,
-    pass: smtp.auth.pass,
-  },
+const sendEmail = createEmailSender({
+  provider: setting<string>("email.provider"),
+  smtp,
+  isProduction: process.env.NODE_ENV === "production",
 });
+
+// Avec Gmail, l'adresse d'expédition doit être celle du compte SMTP.
+const fromAddress = setting<string>("email.from") ?? smtp?.auth?.user ?? "no-reply@localhost";
+const defaultSenderName = setting<string>("email.info.from") ?? "Auth service";
 
 export default async function sendTemplateEmail<T extends TemplateId>(
   templateId: T,
@@ -43,12 +46,11 @@ export default async function sendTemplateEmail<T extends TemplateId>(
     variable: variable ?? "",
   });
 
-  const info = await transporter.sendMail({
-    from: `"${appClientBranding?.appName ?? "Auth service"}" <no-reply@yourapp.com>`,
+  return sendEmail({
+    from: `"${appClientBranding?.appName ?? defaultSenderName}" <${fromAddress}>`,
     to: recipient.email,
     subject: template.subject,
     html,
+    variable,
   });
-
-  return info;
 }
