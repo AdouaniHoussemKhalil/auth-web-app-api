@@ -46,7 +46,9 @@ les mêmes étapes plus `build` sur chaque PR vers `develop`.
 ## Configuration
 
 - Paquet `config` : `config/default.json`, `config/production.json` (`NODE_ENV=production`), `config/test.json` (Jest),
-  `config/local.json` pour les secrets locaux (ignoré par Git), et la variable `NODE_CONFIG` (JSON) pour Docker.
+  `config/local.json` pour les secrets locaux (ignoré par Git), et en production des variables d'environnement
+  (`MONGODB_URI`, `BREVO_API_KEY`…) déclarées dans `config/custom-environment-variables.json`. Toute nouvelle clé
+  secrète doit y être ajoutée, ainsi que dans `render.yaml` (avec `sync: false`) et dans le README.
 - Lire la configuration avec `config.get("clé.imbriquée")`. Pour une clé optionnelle, utiliser `config.has()` avec une valeur
   par défaut dans le code (voir `app.ts`, `rateLimiter.ts`) plutôt que de modifier `default.json`.
 - **Ne jamais écrire de secrets** (URI MongoDB, mot de passe SMTP, client ID Google) dans les fichiers de config versionnés.

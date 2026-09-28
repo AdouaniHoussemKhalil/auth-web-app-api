@@ -18,6 +18,7 @@ délègue à l'API l'inscription, la connexion, les sessions, le mot de passe et
 - [Authentification des requêtes](#authentification-des-requêtes)
 - [Endpoints](#endpoints)
 - [Parcours d'intégration](#parcours-dintégration)
+- [Déploiement (Render)](#déploiement-render)
 - [Sécurité](#sécurité)
 - [Format des réponses d'erreur](#format-des-réponses-derreur)
 - [Limites connues](#limites-connues)
@@ -88,8 +89,8 @@ d'une application invalide toutes les sessions de ses consumers.
 docker compose up --build
 ```
 
-Lance MongoDB et l'API sur `http://localhost:8080`. Pour l'envoi d'e-mails et la connexion Google, compléter la variable
-`NODE_CONFIG` dans `docker-compose.yml` (voir [Configuration](#configuration)).
+Lance MongoDB et l'API sur `http://localhost:8080`. Les e-mails (et leurs codes) s'affichent dans les logs du conteneur ;
+les autres réglages se passent par variables d'environnement (voir [Déploiement](#déploiement-render)).
 
 ### En local
 
@@ -127,7 +128,8 @@ La configuration est gérée par le paquet [`config`](https://github.com/node-co
 - `config/production.json` : chargé quand `NODE_ENV=production` ;
 - `config/test.json` : utilisé par Jest (limitation de débit désactivée) ;
 - `config/local.json` : **à créer localement** pour vos secrets. Il surcharge les fichiers précédents et est ignoré par Git ;
-- variable d'environnement `NODE_CONFIG` : JSON qui surcharge tout (pratique avec Docker).
+- variables d'environnement (`MONGODB_URI`, `BREVO_API_KEY`…) : voir [Déploiement](#déploiement-render) ; elles surchargent les fichiers ;
+- variable `NODE_CONFIG` : JSON qui surcharge tout.
 
 > 🔒 Ne committez jamais de vrais identifiants (URI MongoDB, mot de passe SMTP, client ID Google) dans les fichiers versionnés.
 
@@ -371,6 +373,48 @@ curl -X POST http://localhost:8080/consumers/auth/login \
 > Le `secretKey` de l'application donne accès à toutes les opérations sur ses consumers : il doit rester côté serveur,
 > jamais dans un front web ou mobile. En cas de fuite, utiliser `rotate-secret`.
 
+## Déploiement (Render)
+
+Le service est déployé sur Render depuis la branche **`master`**, avec l'image Docker du dépôt. Le fichier `render.yaml`
+(Blueprint) décrit le service : _New → Blueprint_ sur Render, puis sélectionner le dépôt.
+
+### Variables d'environnement
+
+En production, la configuration se passe par variables d'environnement, lues par
+`config/custom-environment-variables.json`. Elles priment sur les fichiers de config ; une variable absente garde la valeur
+par défaut.
+
+| Variable                  | Obligatoire              | Exemple                                            | Clé de config        |
+| ------------------------- | ------------------------ | -------------------------------------------------- | -------------------- |
+| `MONGODB_URI`             | oui                      | `mongodb+srv://user:pass@cluster.mongodb.net/auth` | `db.uri`             |
+| `EMAIL_PROVIDER`          | oui sur Render           | `brevo`                                            | `email.provider`     |
+| `BREVO_API_KEY`           | avec Brevo               | `xkeysib-...`                                      | `email.brevo.apiKey` |
+| `EMAIL_FROM`              | avec Brevo               | expéditeur vérifié dans Brevo                      | `email.from`         |
+| `TRUST_PROXY`             | oui sur Render           | `1`                                                | `server.trustProxy`  |
+| `CORS_ORIGINS`            | recommandé               | `["https://mon-front.com"]` (JSON)                 | `cors.origins`       |
+| `GOOGLE_CLIENT_ID`        | pour la connexion Google | `xxx.apps.googleusercontent.com`                   | `google.clientId`    |
+| `PORT`                    | fourni par Render        | `10000`                                            | `server.port`        |
+| `LOG_LEVEL`               | non                      | `info`                                             | `log.level`          |
+| `SMTP_USER` / `SMTP_PASS` | avec SMTP (hors Render)  | —                                                  | `email.smtp.auth.*`  |
+
+`NODE_ENV=production` est défini dans l'image Docker (logs JSON, erreurs d'envoi d'e-mail remontées).
+
+### Avant le premier déploiement sur une base existante
+
+```bash
+MONGODB_URI="<uri de production>" npm run db:check-duplicates
+```
+
+Le script vérifie qu'aucun doublon n'empêche la création des index uniques. Les migrations de données s'exécutent ensuite
+automatiquement au démarrage.
+
+### Tester l'image en local
+
+```bash
+docker compose up --build
+curl http://localhost:8080/health
+```
+
 ## Sécurité
 
 - **Mots de passe** hachés avec bcrypt ; règles de complexité à l'inscription et au changement.
@@ -424,5 +468,3 @@ Les autres erreurs métier ont un code explicite (`invalidCredentials`, `userAlr
 à défaut, le code dépend du statut (`badRequest`, `unauthorized`, `forbidden`, `notFound`…).
 
 ## Limites connues
-
-- L'image Docker n'a pas encore été testée en conditions réelles.
