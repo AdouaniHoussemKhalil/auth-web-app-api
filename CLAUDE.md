@@ -104,8 +104,8 @@ Conventions :
   codes invalides).
 - E-mails : ajouter un template dans `src/services/email/models/Template.ts` (textes en français) et l'envoyer avec
   `sendTemplateEmail(templates.x.id, { recipient, appClientBranding, variable })`.
-  Le transport est choisi par `src/services/email/emailSender.ts` (`email.provider` : `smtp` ou `console`) ; un nouveau
-  provider (HTTP, par exemple Brevo) s'ajoute dans `providers.ts`. En local, `"email": { "provider": "console" }` affiche
+  Le transport est choisi par `src/services/email/emailSender.ts` (`email.provider` : `smtp`, `brevo` ou `console`) ; un nouveau
+  provider s'ajoute dans `providers.ts`. En local, `"email": { "provider": "console" }` affiche
   les codes dans le terminal.
 - Commentaires Swagger, commentaires de code et textes des e-mails en français ; code, messages d'erreur API et `error.code` en anglais.
 

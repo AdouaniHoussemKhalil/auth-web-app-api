@@ -2,7 +2,7 @@ import config from "config";
 import { Recipient } from "./models/Recipient";
 import { TemplateId, templates } from "./models/Template";
 import { createEmailSender } from "./emailSender";
-import { SmtpSettings } from "./providers";
+import { BrevoSettings, SmtpSettings } from "./providers";
 
 const setting = <T>(key: string): T | undefined =>
   config.has(key) ? config.get<T>(key) : undefined;
@@ -12,6 +12,7 @@ const smtp = setting<SmtpSettings>("email.smtp");
 const sendEmail = createEmailSender({
   provider: setting<string>("email.provider"),
   smtp,
+  brevo: setting<BrevoSettings>("email.brevo"),
   isProduction: process.env.NODE_ENV === "production",
 });
 
