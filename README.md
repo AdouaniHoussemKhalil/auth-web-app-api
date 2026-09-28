@@ -48,7 +48,7 @@ d'une application invalide toutes les sessions de ses consumers.
 
 **Tenants**
 
-- Inscription par e-mail / mot de passe, ou via Google (ID token Google).
+- Inscription par e-mail / mot de passe avec vérification de l'adresse, ou via Google (ID token Google).
 - Connexion en deux étapes : mot de passe, puis code à 6 chiffres envoyé par e-mail.
 - Sessions : refresh token avec rotation, déconnexion (une session ou toutes).
 - Gestion des applications clientes : création, activation / désactivation, consultation, rotation du secret.
@@ -188,6 +188,11 @@ Pour recevoir de vrais e-mails en local avec Gmail :
 > ⚠️ Les ports SMTP sortants sont bloqués sur l'offre gratuite de Render : en production sur Render, il faudra un provider HTTP
 > (Brevo, ticket #34). Le provider `console` y afficherait les codes dans les logs : à réserver à une démonstration.
 
+### Migrations au démarrage
+
+Des migrations de données idempotentes s'exécutent à chaque démarrage (`src/config/migrations.ts`). Actuellement : les
+tenants créés avant la vérification d'e-mail sont considérés comme vérifiés, pour ne pas être bloqués à la connexion.
+
 ### Réglages d'une application cliente
 
 Définis à la création (`POST /config/apps/create`) :
@@ -234,12 +239,12 @@ tests/                       # tests d'intégration Jest + Supertest
 
 ## Authentification des requêtes
 
-| Routes                                                                                 | En-têtes requis                                                              |
-| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `/tenants/register`, `login`, `loginByMFACode`, `google-register`, `refresh`, `logout` | aucun                                                                        |
-| `/config/*` et `/tenants/:tenantId/app/...`                                            | `Authorization: Bearer <access_token tenant>` + `X-Tenant-Id: <tenantId>`    |
-| `/consumers/*` (toutes les routes)                                                     | `x-app-id: <id de l'AppClient>` + `x-app-secret: <secretKey de l'AppClient>` |
-| `/consumers/*` protégées (profil, mot de passe, MFA, `me`)                             | en plus : `Authorization: Bearer <access_token consumer>`                    |
+| Routes                                                                                                                           | En-têtes requis                                                              |
+| -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `/tenants/register`, `verifyEmail`, `resendEmailVerification`, `login`, `loginByMFACode`, `google-register`, `refresh`, `logout` | aucun                                                                        |
+| `/config/*` et `/tenants/:tenantId/app/...`                                                                                      | `Authorization: Bearer <access_token tenant>` + `X-Tenant-Id: <tenantId>`    |
+| `/consumers/*` (toutes les routes)                                                                                               | `x-app-id: <id de l'AppClient>` + `x-app-secret: <secretKey de l'AppClient>` |
+| `/consumers/*` protégées (profil, mot de passe, MFA, `me`)                                                                       | en plus : `Authorization: Bearer <access_token consumer>`                    |
 
 **Cloisonnement** : un tenant ne peut agir que sur son propre `tenantId` et ses propres applications ; un consumer ne peut
 agir que sur son propre compte (`:id`, `userId` et `email` doivent correspondre à son token). Sinon : `403`.
@@ -248,19 +253,21 @@ agir que sur son propre compte (`:id`, `userId` et `email` doivent correspondre 
 
 ### Tenants — `/tenants`
 
-| Méthode | Route                                                 | Description                                                                                              |
-| ------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| POST    | `/tenants/register`                                   | Inscription (`firstName`, `lastName`, `email`, `password`, `confirmPassword`) → tokens.                  |
-| POST    | `/tenants/login`                                      | Vérifie le mot de passe et envoie un code MFA par e-mail → `{ MFARequired: true }`.                      |
-| POST    | `/tenants/loginByMFACode`                             | Valide le code (`email`, `mfaCode`) → tokens.                                                            |
-| POST    | `/tenants/google-register`                            | Inscription / connexion avec un ID token Google (`token`) → tokens.                                      |
-| POST    | `/tenants/refresh`                                    | Échange un refresh token (`refreshToken`) contre une nouvelle paire.                                     |
-| POST    | `/tenants/logout`                                     | Révoque le refresh token (`refreshToken`, `allDevices?`).                                                |
-| POST    | `/tenants/forgotPassword`                             | Envoie un code de réinitialisation par e-mail (`email`).                                                 |
-| POST    | `/tenants/verifyResetCode`                            | Échange le code (`email`, `resetCode`) contre un `resetToken`.                                           |
-| PUT     | `/tenants/resetPassword`                              | Nouveau mot de passe (`email`, `resetToken`, `password`, `confirmPassword`) ; ferme toutes les sessions. |
-| GET     | `/tenants/:tenantId/app/:appId/consumers`             | Consumers d'une application du tenant.                                                                   |
-| GET     | `/tenants/:tenantId/app/:appId/consumers/:consumerId` | Détail d'un consumer.                                                                                    |
+| Méthode | Route                                                 | Description                                                                                                                      |
+| ------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| POST    | `/tenants/register`                                   | Inscription (`firstName`, `lastName`, `email`, `password`, `confirmPassword`) ; envoie un code de vérification, **aucun token**. |
+| POST    | `/tenants/verifyEmail`                                | Vérifie l'e-mail (`email`, `code`) → tokens (ouvre la session).                                                                  |
+| POST    | `/tenants/resendEmailVerification`                    | Renvoie un code de vérification (`email`).                                                                                       |
+| POST    | `/tenants/login`                                      | Vérifie le mot de passe et envoie un code MFA par e-mail → `{ MFARequired: true }`.                                              |
+| POST    | `/tenants/loginByMFACode`                             | Valide le code (`email`, `mfaCode`) → tokens.                                                                                    |
+| POST    | `/tenants/google-register`                            | Inscription / connexion avec un ID token Google (`token`) → tokens.                                                              |
+| POST    | `/tenants/refresh`                                    | Échange un refresh token (`refreshToken`) contre une nouvelle paire.                                                             |
+| POST    | `/tenants/logout`                                     | Révoque le refresh token (`refreshToken`, `allDevices?`).                                                                        |
+| POST    | `/tenants/forgotPassword`                             | Envoie un code de réinitialisation par e-mail (`email`).                                                                         |
+| POST    | `/tenants/verifyResetCode`                            | Échange le code (`email`, `resetCode`) contre un `resetToken`.                                                                   |
+| PUT     | `/tenants/resetPassword`                              | Nouveau mot de passe (`email`, `resetToken`, `password`, `confirmPassword`) ; ferme toutes les sessions.                         |
+| GET     | `/tenants/:tenantId/app/:appId/consumers`             | Consumers d'une application du tenant.                                                                                           |
+| GET     | `/tenants/:tenantId/app/:appId/consumers/:consumerId` | Détail d'un consumer.                                                                                                            |
 
 ### Applications clientes — `/config`
 
@@ -297,7 +304,8 @@ Le détail des corps de requête est disponible dans Swagger (`/api-docs`) et da
 
 ## Parcours d'intégration
 
-1. **Créer un compte tenant** : `POST /tenants/register` → `tenantId` et tokens.
+1. **Créer un compte tenant** : `POST /tenants/register`, puis `POST /tenants/verifyEmail` avec le code reçu par e-mail
+   → `tenantId` et tokens.
 2. **Se reconnecter plus tard** : `POST /tenants/login`, puis `POST /tenants/loginByMFACode` avec le code reçu par e-mail.
 3. **Déclarer une application** : `POST /config/apps/create` (en-têtes `Authorization` + `X-Tenant-Id`) → `appId`.
 4. **Récupérer le secret de l'application** : `GET /config/apps/:tenantId/:appId` → `secretKey`.
@@ -365,7 +373,7 @@ Toutes les erreurs, y compris celles des middlewares de sécurité et de la limi
 | `invalidCode`, `expiredCode`, `noPendingCode`      | 400       | Codes à usage unique                                                                              |
 | `invalidMfaVerification`                           | 400       | Demande MFA invalide ou expirée                                                                   |
 | `invalidRefreshToken`                              | 401       | Refresh token invalide, expiré, déjà utilisé ou révoqué                                           |
-| `emailNotVerified`                                 | 403       | Connexion avant vérification de l'e-mail                                                          |
+| `emailNotVerified`                                 | 403       | Connexion d'un tenant, ou d'un consumer si l'application l'exige, avant vérification de l'e-mail  |
 | `invalidGoogleToken` / `googleEmailNotVerified`    | 401       | ID token Google invalide, expiré, émis pour un autre Client ID, ou e-mail Google non vérifié      |
 | `internalError`                                    | 500       | Erreur interne (message générique, détail uniquement dans les logs)                               |
 

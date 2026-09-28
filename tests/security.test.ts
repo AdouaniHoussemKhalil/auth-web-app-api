@@ -148,7 +148,7 @@ describe("Connexion et inscription des tenants", () => {
     expect(JSON.stringify(res.body)).not.toContain("secretKey");
   });
 
-  it("ne renvoie pas le secretKey à l'inscription", async () => {
+  it("n'ouvre pas de session à l'inscription et n'expose jamais le secretKey", async () => {
     const res = await request(app).post("/tenants/register").send({
       firstName: "Alice",
       lastName: "Tenant",
@@ -158,9 +158,12 @@ describe("Connexion et inscription des tenants", () => {
     });
 
     expect(res.status).toBe(201);
-    expect(res.body.secretKey).toBeUndefined();
+    expect(res.body.access_token).toBeUndefined();
+    expect(JSON.stringify(res.body)).not.toContain("secretKey");
+
+    const tenant = await registerTenant(app, "other@test.com");
     const payload = JSON.parse(
-      Buffer.from(res.body.access_token.split(".")[1], "base64url").toString()
+      Buffer.from(tenant.accessToken.split(".")[1], "base64url").toString()
     );
     expect(JSON.stringify(payload)).not.toContain("secretKey");
   });

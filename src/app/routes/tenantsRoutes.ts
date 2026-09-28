@@ -22,6 +22,12 @@ import resetPasswordHandler from "../../handlers/commands/tenants/resetPasswordH
 import { forgotPasswordSchema } from "../../validation/users/forgotPasswordSchema";
 import { verifyResetCodeSchema } from "../../validation/users/verifyResetCodeSchema";
 import { resetPasswordSchema } from "../../validation/users/resetPasswordSchema";
+import verifyEmailHandler from "../../handlers/commands/tenants/verifyEmailHandler";
+import resendEmailVerificationHandler from "../../handlers/commands/tenants/resendEmailVerificationHandler";
+import {
+  resendEmailVerificationSchema,
+  verifyEmailSchema,
+} from "../../validation/users/emailVerificationSchema";
 
 const tenantsRoutes = Router();
 
@@ -113,7 +119,7 @@ tenantsRoutes.get(
  *              $ref: '#/components/schemas/TenantRegister'
  *     responses:
  *       201:
- *         description: Tenant créé avec succès
+ *         description: Tenant créé ; un code de vérification est envoyé par e-mail (aucun token)
  *       400:
  *         description: Echec de la création du tenant
  */
@@ -316,6 +322,56 @@ tenantsRoutes.put(
   authRateLimiter,
   validate(resetPasswordSchema),
   asyncHandler(resetPasswordHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/verifyEmail:
+ *   post:
+ *     summary: Vérifie l'adresse e-mail avec le code reçu à l'inscription et ouvre une session
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerVerifyEmail'
+ *     responses:
+ *       200:
+ *         description: E-mail vérifié, tokens renvoyés
+ *       400:
+ *         description: Code invalide ou expiré
+ */
+tenantsRoutes.post(
+  "/verifyEmail",
+  authRateLimiter,
+  validate(verifyEmailSchema),
+  asyncHandler(verifyEmailHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/resendEmailVerification:
+ *   post:
+ *     summary: Renvoie un code de vérification d'adresse e-mail
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerForgotPassword'
+ *     responses:
+ *       200:
+ *         description: Réponse identique que le compte existe ou non
+ *       400:
+ *         description: Code invalide ou expiré
+ */
+tenantsRoutes.post(
+  "/resendEmailVerification",
+  authRateLimiter,
+  validate(resendEmailVerificationSchema),
+  asyncHandler(resendEmailVerificationHandler)
 );
 
 export default tenantsRoutes;

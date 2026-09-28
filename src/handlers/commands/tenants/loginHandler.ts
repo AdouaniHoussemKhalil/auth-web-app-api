@@ -43,6 +43,13 @@ const loginHandler = async (req: Request, res: Response, next: NextFunction) => 
       throw error;
     }
 
+    if (!tenant.isEmailVerified) {
+      const error = new Error("Email address is not verified") as CustomError;
+      error.status = 403;
+      error.code = "emailNotVerified";
+      throw error;
+    }
+
     if (!tenant.isActive) {
       const error = new Error("User is blocked") as CustomError;
       error.status = 403;

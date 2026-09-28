@@ -8,6 +8,7 @@ import {
   PASSWORD,
   appHeaders,
   createAppClient,
+  emailsSent,
   lastEmailVariable,
   registerConsumer,
   registerTenant,
@@ -39,14 +40,8 @@ const login = (password: string) =>
 
 describe("Mot de passe oublié des tenants", () => {
   it("réinitialise le mot de passe et ferme les sessions existantes", async () => {
-    // L'inscription ouvre une session : son refresh token doit être révoqué par la réinitialisation.
-    const session = await request(app).post("/tenants/register").send({
-      firstName: "Bob",
-      lastName: "Tenant",
-      email: "bob@test.com",
-      password: PASSWORD,
-      confirmPassword: PASSWORD,
-    });
+    // Session ouverte à la vérification de l'e-mail : elle doit être révoquée par la réinitialisation.
+    const session = await registerTenant(app, "bob@test.com");
 
     await forgot("bob@test.com");
     const verified = await verify(lastEmailVariable(templates.forgotPassword.id), "bob@test.com");
@@ -57,7 +52,7 @@ describe("Mot de passe oublié des tenants", () => {
     expect(res.status).toBe(201);
     const oldSession = await request(app)
       .post("/tenants/refresh")
-      .send({ refreshToken: session.body.refresh_token });
+      .send({ refreshToken: session.refreshToken });
     expect(oldSession.status).toBe(401);
     const newLogin = await request(app)
       .post("/tenants/login")
@@ -93,7 +88,7 @@ describe("Mot de passe oublié des tenants", () => {
 
     expect(unknown.status).toBe(201);
     expect(unknown.body).toEqual(existing.body);
-    expect(sentEmails().mock.calls).toHaveLength(1);
+    expect(emailsSent(templates.forgotPassword.id)).toBe(1);
   });
 
   it("permet à un compte Google de définir un mot de passe", async () => {
@@ -104,6 +99,7 @@ describe("Mot de passe oublié des tenants", () => {
       lastName: "Google",
       secretKey: "secret",
       isByGoogle: true,
+      isEmailVerified: true,
     });
 
     await forgot();

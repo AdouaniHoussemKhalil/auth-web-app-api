@@ -1,79 +1,49 @@
 import { Request, Response, NextFunction } from "express";
-import { Tenant } from "../../../models/Tenant";
 import crypto from "crypto";
-import { CustomError } from "../../../middleware/error/errorHandler";
+import { Tenant } from "../../../models/Tenant";
+import { UserRole } from "../../../models/enums/UserRole";
+import { createError } from "../../../middleware/error/errorHandler";
 import { hash } from "../../../services/hashing/hash";
-import { generateTenantToken } from "../../../services/token/tokenService";
+import { sendEmailVerification } from "../../../services/email/sendEmailVerification";
 
 const config = require("config");
 const scopes = config.get("tenant.scopes");
 
+// Inscription : aucun token tant que l'adresse e-mail n'est pas vérifiée (POST /tenants/verifyEmail).
 const registerHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password, confirmPassword, firstName, lastName, role } = req.body;
+    const { email, password, confirmPassword, firstName, lastName } = req.body;
 
-    if (!email || !password || !confirmPassword || !firstName || !lastName) {
-      const error = new Error("All fields are required") as CustomError;
-      error.status = 400;
-      error.code = "missingFields";
-      throw error;
-    }
-
-    const tenant = await Tenant.findOne({ email });
-    if (tenant) {
-      const error = new Error("User already exists") as CustomError;
-      error.status = 400;
-      error.code = "userAlreadyExists";
-      throw error;
+    if (await Tenant.exists({ email })) {
+      throw createError(400, "userAlreadyExists", "User already exists");
     }
 
     if (password !== confirmPassword) {
-      const error = new Error("Passwords do not match") as CustomError;
-      error.status = 400;
-      error.code = "passwordMismatch";
-      throw error;
+      throw createError(400, "passwordMismatch", "Passwords do not match");
     }
 
-    const hashedPassword = await hash(password);
-
-    const secretKey = crypto.randomBytes(64).toString("hex");
-
-    const tenantId = crypto.randomUUID();
-    const newTenant = new Tenant({
-      id: tenantId,
+    const tenant = await Tenant.create({
+      id: crypto.randomUUID(),
       email,
-      password: hashedPassword,
+      password: await hash(password),
       firstName,
       lastName,
-      secretKey,
-      role,
+      secretKey: crypto.randomBytes(64).toString("hex"),
+      // Le rôle n'est jamais choisi par le client.
+      role: UserRole.TENANT,
       scopes,
       isActive: true,
       isMFAActivated: true,
+      isEmailVerified: false,
     });
 
-    await newTenant.save();
-
-    const result = {
-      email: email,
-      firstName: firstName,
-      lastName: lastName,
-      role: role,
-      scopes: scopes,
-      tenantId: tenantId,
-    };
-
-    const { access_token, refresh_token } = await generateTenantToken(
-      { jwtPayload: result },
-      newTenant.secretKey,
-      newTenant.id
-    );
+    await sendEmailVerification(tenant);
 
     res.status(201).json({
-      message: "Tenant registered successfully",
-      ...result,
-      access_token,
-      refresh_token,
+      message: "Tenant registered, please verify your email",
+      tenantId: tenant.id,
+      email: tenant.email,
+      emailVerificationRequired: true,
       isSuccess: true,
     });
   } catch (error) {
