@@ -1,6 +1,7 @@
 import { Router } from "express";
 import validate from "../../middleware/validation/validateSchema";
 import { asyncHandler } from ".";
+import { requireScope } from "../../middleware/security/requireScope";
 import { createClientAppSchema } from "../../validation/configurations/createClientAppSchema";
 import createClientAppHandler from "../../handlers/commands/configurations/createClientAppHandler";
 import { tenantProtectedActionsAuthToken } from "../../middleware/security/tenantProtectedActionsAuthToken";
@@ -41,6 +42,7 @@ configurationsRoutes.post(
   "/apps/create",
   tenantProtectedActionsAuthToken,
   validate(createClientAppSchema),
+  requireScope("app:create"),
   asyncHandler(createClientAppHandler)
 );
 
@@ -81,6 +83,7 @@ configurationsRoutes.put(
   "/apps/update/:tenantId/:appId",
   tenantProtectedActionsAuthToken,
   validate(updateClientAppSchema),
+  requireScope("app:update"),
   asyncHandler(updateClientAppHandler)
 );
 
@@ -109,6 +112,7 @@ configurationsRoutes.put(
 configurationsRoutes.get(
   "/apps/:tenantId",
   tenantProtectedActionsAuthToken,
+  requireScope("app:read"),
   asyncHandler(getAppClientsQuery)
 );
 
@@ -142,6 +146,7 @@ configurationsRoutes.get(
 configurationsRoutes.get(
   "/apps/:tenantId/:appId",
   tenantProtectedActionsAuthToken,
+  requireScope("app:read"),
   asyncHandler(getAppClientByIdQuery)
 );
 
@@ -176,6 +181,7 @@ configurationsRoutes.get(
 configurationsRoutes.post(
   "/apps/:tenantId/:appId/rotate-secret",
   tenantProtectedActionsAuthToken,
+  requireScope("app:update"),
   asyncHandler(rotateClientAppSecretHandler)
 );
 

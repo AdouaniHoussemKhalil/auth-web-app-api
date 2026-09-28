@@ -3,6 +3,7 @@ import { consumerActionsAuthToken } from "../../middleware/security/consumerActi
 import validate from "../../middleware/validation/validateSchema";
 import { registerSchema } from "../../validation/users/registerSchema";
 import { asyncHandler } from ".";
+import { mfaRequestScope, requireScope } from "../../middleware/security/requireScope";
 import { authRateLimiter } from "../../middleware/security/rateLimiter";
 import { loginSchema } from "../../validation/users/loginSchema";
 import loginUserHandler from "../../handlers/commands/consumers/loginUserHandler";
@@ -269,6 +270,7 @@ consumersRoutes.put(
   validate(updateProfileSchema),
   consumerActionsAuthToken,
   consumerProtectedActionsAuthToken,
+  requireScope("consumer:updateProfile"),
   asyncHandler(updateProfileHandler)
 );
 
@@ -312,6 +314,7 @@ consumersRoutes.put(
   "/auth/updatePassword/:id",
   validate(updatePasswordSchema),
   consumerProtectedActionsAuthToken,
+  requireScope("consumer:updatePassword"),
   asyncHandler(updatePasswordHandler)
 );
 
@@ -351,6 +354,7 @@ consumersRoutes.post(
   authRateLimiter,
   validate(activatedMFASchema),
   consumerProtectedActionsAuthToken,
+  requireScope("consumer:activateMFA"),
   asyncHandler(activateMFAHandler)
 );
 
@@ -390,6 +394,7 @@ consumersRoutes.post(
   authRateLimiter,
   validate(deactivateMFASchema),
   consumerProtectedActionsAuthToken,
+  requireScope("consumer:deactivateMFA"),
   asyncHandler(deactivateMFAHandler)
 );
 
@@ -467,6 +472,7 @@ consumersRoutes.post(
   authRateLimiter,
   validate(requestMFASchema),
   consumerProtectedActionsAuthToken,
+  requireScope(mfaRequestScope),
   asyncHandler(requestMFAHandler)
 );
 

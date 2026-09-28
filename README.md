@@ -249,6 +249,23 @@ tests/                       # tests d'intégration Jest + Supertest
 **Cloisonnement** : un tenant ne peut agir que sur son propre `tenantId` et ses propres applications ; un consumer ne peut
 agir que sur son propre compte (`:id`, `userId` et `email` doivent correspondre à son token). Sinon : `403`.
 
+### Scopes
+
+Les routes protégées exigent un scope présent dans le token (`403 insufficientScope` sinon). Les scopes d'un compte sont
+fixés à l'inscription (`tenant.scopes` / `consumer.scopes` de la config) et copiés dans chaque token : un changement en
+base prend effet au prochain token (connexion ou refresh).
+
+| Scope                     | Routes                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `app:create`              | `POST /config/apps/create`                                                          |
+| `app:read`                | `GET /config/apps/:tenantId`, `GET /config/apps/:tenantId/:appId`                   |
+| `app:update`              | `PUT /config/apps/update/...`, `POST /config/apps/.../rotate-secret`                |
+| `consumer:read`           | `GET /tenants/:tenantId/app/:appId/consumers[/:consumerId]`                         |
+| `consumer:updateProfile`  | `PUT /consumers/auth/updateProfile/:id`                                             |
+| `consumer:updatePassword` | `PUT /consumers/auth/updatePassword/:id`                                            |
+| `consumer:activateMFA`    | `POST /consumers/auth/activateMFA`, `requestMFA` avec `requestType: "activate"`     |
+| `consumer:deactivateMFA`  | `POST /consumers/auth/deactivateMFA`, `requestMFA` avec `requestType: "deactivate"` |
+
 ## Endpoints
 
 ### Tenants — `/tenants`
@@ -368,6 +385,7 @@ Toutes les erreurs, y compris celles des middlewares de sécurité et de la limi
 | `missingToken` / `invalidToken`                    | 401 / 403 | En-tête `Authorization` absent, ou token invalide ou expiré                                       |
 | `missingTenantId`                                  | 400       | En-tête `X-Tenant-Id` absent                                                                      |
 | `forbiddenTenant` / `forbiddenUser`                | 403       | Ressource d'un autre tenant ou d'un autre consumer                                                |
+| `insufficientScope`                                | 403       | Le token n'a pas le scope exigé par la route                                                      |
 | `appNotFound`, `consumerNotFound`, `routeNotFound` | 404       | Ressource ou route inexistante                                                                    |
 | `tooManyRequests`                                  | 429       | Limitation de débit                                                                               |
 | `invalidCode`, `expiredCode`, `noPendingCode`      | 400       | Codes à usage unique                                                                              |
@@ -384,6 +402,6 @@ Les autres erreurs métier ont un code explicite (`invalidCredentials`, `userAlr
 
 - Le mode MFA `both` du modèle n'est pas géré : il se comporte comme `code`.
 - Les access tokens sont sans état : après une déconnexion, un access token déjà émis reste valable jusqu'à son expiration
-  (1 h par défaut). Les scopes des tokens ne sont pas encore vérifiés par les routes.
+  (1 h par défaut).
 - Pas encore de provider d'e-mails HTTP : sur un hébergeur qui bloque SMTP (Render), aucun e-mail ne part (ticket #34).
 - L'image Docker n'a pas encore été testée en conditions réelles.
