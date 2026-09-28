@@ -2,7 +2,16 @@ import request from "supertest";
 import { createApp } from "../src/app";
 import { templates } from "../src/services/email/models/Template";
 import { connectTestDB, clearTestDB, disconnectTestDB } from "./helpers/db";
-import { PASSWORD, lastEmailVariable, registerTenant, sentEmails } from "./helpers/fixtures";
+import { Tenant } from "../src/models/Tenant";
+import {
+  PASSWORD,
+  createAppClient,
+  lastEmailVariable,
+  registerConsumer,
+  registerTenant,
+  sentEmails,
+  tenantHeaders,
+} from "./helpers/fixtures";
 
 jest.mock("../src/services/email/sendMails");
 
@@ -93,5 +102,46 @@ describe("Connexion tenant en deux étapes", () => {
       .send({ email: "tenant@test.com", mfaCode: "000000" });
 
     expect(res.status).toBe(400);
+  });
+});
+
+describe("Consultation des consumers par le tenant", () => {
+  it("liste les consumers d'une application et affiche leur détail", async () => {
+    const tenant = await registerTenant(app);
+    const client = await createAppClient(app, tenant);
+    const consumer = await registerConsumer(app, client);
+
+    const list = await request(app)
+      .get(`/tenants/${tenant.tenantId}/app/${client.appId}/consumers`)
+      .set(tenantHeaders(tenant));
+    expect(list.status).toBe(200);
+    expect(list.body).toEqual([expect.objectContaining({ id: consumer.id })]);
+    expect(list.body[0].password).toBeUndefined();
+
+    const detail = await request(app)
+      .get(`/tenants/${tenant.tenantId}/app/${client.appId}/consumers/${consumer.id}`)
+      .set(tenantHeaders(tenant));
+    expect(detail.status).toBe(200);
+    expect(detail.body.email).toBe(consumer.email);
+  });
+});
+
+describe("Tenant inscrit via Google", () => {
+  it("indique d'utiliser la connexion Google au lieu d'une erreur serveur", async () => {
+    await Tenant.create({
+      id: "google-tenant",
+      email: "google@test.com",
+      firstName: "Gina",
+      lastName: "Google",
+      secretKey: "secret",
+      isByGoogle: true,
+    });
+
+    const res = await request(app)
+      .post("/tenants/login")
+      .send({ email: "google@test.com", password: PASSWORD });
+
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe("useGoogleSignIn");
   });
 });

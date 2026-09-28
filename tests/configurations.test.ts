@@ -61,3 +61,34 @@ describe("Applications clientes", () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe("Création d'application : validation et réglages MFA", () => {
+  it("enregistre le mode et la durée MFA", async () => {
+    const tenant = await registerTenant(app);
+
+    const client = await createAppClient(app, tenant, {
+      mfaVerificationMode: "link",
+      mfaExpiresIn: "30m",
+    });
+
+    const res = await request(app)
+      .get(`/config/apps/${tenant.tenantId}/${client.appId}`)
+      .set(tenantHeaders(tenant));
+    expect(res.body.mfaSettings).toEqual(
+      expect.objectContaining({ verificationMode: "link", expiryMinutes: 30 })
+    );
+  });
+
+  it("refuse une application sans URL de réinitialisation", async () => {
+    const tenant = await registerTenant(app);
+
+    const res = await request(app).post("/config/apps/create").set(tenantHeaders(tenant)).send({
+      tenantId: tenant.tenantId,
+      name: "Demo App",
+      supportEmail: "support@demo.com",
+      redirectUrl: "https://demo.com",
+    });
+
+    expect(res.status).toBe(400);
+  });
+});

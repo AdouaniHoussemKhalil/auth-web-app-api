@@ -37,15 +37,20 @@ export const tenantHeaders = (tenant: { tenantId: string; accessToken: string })
 
 export const createAppClient = async (
   app: Express,
-  tenant: { tenantId: string; accessToken: string }
+  tenant: { tenantId: string; accessToken: string },
+  overrides: Record<string, unknown> = {}
 ) => {
-  const created = await request(app).post("/config/apps/create").set(tenantHeaders(tenant)).send({
-    tenantId: tenant.tenantId,
-    name: "Demo App",
-    supportEmail: "support@demo.com",
-    redirectUrl: "https://demo.com",
-    resetPasswordUrl: "https://demo.com/reset",
-  });
+  const created = await request(app)
+    .post("/config/apps/create")
+    .set(tenantHeaders(tenant))
+    .send({
+      tenantId: tenant.tenantId,
+      name: "Demo App",
+      supportEmail: "support@demo.com",
+      redirectUrl: "https://demo.com",
+      resetPasswordUrl: "https://demo.com/reset",
+      ...overrides,
+    });
   expect(created.status).toBe(201);
 
   const appId = created.body.data.appId as string;
@@ -60,4 +65,34 @@ export const createAppClient = async (
 export const appHeaders = (client: { appId: string; secretKey: string }) => ({
   "x-app-id": client.appId,
   "x-app-secret": client.secretKey,
+});
+
+export type AppClientCredentials = { appId: string; secretKey: string };
+
+export const registerConsumer = async (
+  app: Express,
+  client: AppClientCredentials,
+  email = "user@test.com"
+) => {
+  const res = await request(app).post("/consumers/auth/register").set(appHeaders(client)).send({
+    firstName: "Bob",
+    lastName: "Consumer",
+    email,
+    password: PASSWORD,
+    confirmPassword: PASSWORD,
+  });
+  expect(res.status).toBe(201);
+  return {
+    id: res.body.user.id as string,
+    email,
+    accessToken: res.body.access_token as string,
+  };
+};
+
+export const consumerHeaders = (
+  client: AppClientCredentials,
+  consumer: { accessToken: string }
+) => ({
+  ...appHeaders(client),
+  Authorization: `Bearer ${consumer.accessToken}`,
 });
