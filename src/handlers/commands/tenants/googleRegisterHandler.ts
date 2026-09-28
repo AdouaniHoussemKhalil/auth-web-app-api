@@ -76,7 +76,6 @@ export const googleRegister = async (req: Request, res: Response, next: NextFunc
       },
     });
   } catch (err) {
-    console.error("Google register error:", err);
     next(err);
   }
 };

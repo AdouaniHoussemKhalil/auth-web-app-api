@@ -1,3 +1,4 @@
+import { logger } from "../../utils/logger";
 import { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 
@@ -56,7 +57,7 @@ const errorHandler = (
 
   // Les erreurs internes (base de données, librairies...) ne sont pas exposées au client.
   if (status >= 500) {
-    console.error("Unhandled error:", error);
+    logger.error({ err: error }, "Unhandled error");
     return send(response, status, "internalError", "An unexpected error occurred");
   }
 

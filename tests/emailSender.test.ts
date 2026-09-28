@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { createEmailSender, resolveEmailProvider } from "../src/services/email/emailSender";
 import { consoleProvider } from "../src/services/email/providers";
+import { logger } from "../src/utils/logger";
 
 jest.mock("nodemailer");
 
@@ -22,12 +23,11 @@ const message = {
   variable: "123456",
 };
 
-let consoleInfo: jest.SpyInstance;
+let loggedInfo: jest.SpyInstance;
 
 beforeEach(() => {
   sendMail.mockReset();
-  consoleInfo = jest.spyOn(console, "info").mockImplementation(() => undefined);
-  jest.spyOn(console, "warn").mockImplementation(() => undefined);
+  loggedInfo = jest.spyOn(logger, "info");
 });
 
 afterEach(() => jest.restoreAllMocks());
@@ -63,7 +63,10 @@ describe("Envoi", () => {
   it("affiche le code dans le terminal avec le provider console", async () => {
     await createEmailSender({ provider: "console", isProduction: false })(message);
 
-    expect(consoleInfo).toHaveBeenCalledWith(expect.stringContaining("123456"));
+    expect(loggedInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "123456" }),
+      expect.any(String)
+    );
   });
 
   it("envoie par SMTP sans le code en clair hors du HTML", async () => {
@@ -85,7 +88,10 @@ describe("Envoi", () => {
     await expect(createEmailSender({ smtp, isProduction: false })(message)).resolves.toEqual({
       provider: "console",
     });
-    expect(consoleInfo).toHaveBeenCalledWith(expect.stringContaining("123456"));
+    expect(loggedInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "123456" }),
+      expect.any(String)
+    );
   });
 
   it("en production, fait remonter l'échec SMTP", async () => {

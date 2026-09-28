@@ -136,7 +136,6 @@ describe("Format d'erreur unique", () => {
       throw new Error("E11000 duplicate key: secret internal detail");
     });
     failing.use(errorHandler);
-    jest.spyOn(console, "error").mockImplementation(() => undefined);
 
     const res = await request(failing).get("/");
 

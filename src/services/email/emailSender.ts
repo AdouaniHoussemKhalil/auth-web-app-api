@@ -1,3 +1,4 @@
+import { logger } from "../../utils/logger";
 import {
   EmailMessage,
   EmailProvider,
@@ -25,7 +26,7 @@ export const resolveEmailProvider = (settings: EmailSettings): EmailProvider => 
 
   if (provider === "console") {
     if (settings.isProduction) {
-      console.warn("Email provider is 'console' in production: codes will appear in the logs.");
+      logger.warn("Email provider is 'console' in production: codes will appear in the logs");
     }
     return consoleProvider;
   }
@@ -35,7 +36,7 @@ export const resolveEmailProvider = (settings: EmailSettings): EmailProvider => 
   }
 
   if (!hasSmtpCredentials(settings.smtp)) {
-    console.warn("SMTP credentials are missing: emails will be printed to the console.");
+    logger.warn("SMTP credentials are missing: emails will be printed to the console");
     return consoleProvider;
   }
 
@@ -55,7 +56,10 @@ export const createEmailSender = (settings: EmailSettings) => {
     } catch (error) {
       if (settings.isProduction || provider === consoleProvider) throw error;
 
-      console.warn(`Email provider "${provider.name}" failed, falling back to console:`, error);
+      logger.warn(
+        { err: error, provider: provider.name },
+        "Email provider failed, falling back to console"
+      );
       return consoleProvider.send(message);
     }
   };

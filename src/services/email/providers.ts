@@ -1,3 +1,4 @@
+import { logger } from "../../utils/logger";
 import nodemailer from "nodemailer";
 
 export type EmailMessage = {
@@ -25,15 +26,9 @@ export type SmtpSettings = {
 export const consoleProvider: EmailProvider = {
   name: "console",
   async send(message) {
-    console.info(
-      [
-        "---------------- E-mail (provider console) ----------------",
-        `De      : ${message.from}`,
-        `À       : ${message.to}`,
-        `Sujet   : ${message.subject}`,
-        ...(message.variable ? [`Code/lien : ${message.variable}`] : []),
-        "-----------------------------------------------------------",
-      ].join("\n")
+    logger.info(
+      { from: message.from, to: message.to, subject: message.subject, code: message.variable },
+      "E-mail (provider console, non envoyé)"
     );
     return { provider: "console" };
   },

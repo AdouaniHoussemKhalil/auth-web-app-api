@@ -75,6 +75,7 @@ d'une application invalide toutes les sessions de ses consumers.
 - MongoDB + Mongoose 8
 - `jsonwebtoken`, `bcrypt`, `zod`, `nodemailer`, `google-auth-library`
 - `helmet`, `express-rate-limit`, `cors`
+- `pino` + `pino-http` pour les logs
 - `config` (fichiers JSON par environnement)
 - Jest + Supertest + mongodb-memory-server pour les tests
 - ESLint 9 + Prettier, GitHub Actions, Docker
@@ -156,7 +157,14 @@ Exemple de `config/local.json` :
 | `cors.origins`                         | `"*"`                      | Origines autorisées (tableau). **À restreindre en production.**                                                        |
 | `rateLimit.enabled`                    | `true`                     | Active la limitation de débit sur les routes sensibles.                                                                |
 | `rateLimit.windowMs` / `rateLimit.max` | `900000` / `20`            | Fenêtre (ms) et nombre maximal de requêtes par application et par IP.                                                  |
+| `log.level`                            | `info` (`silent` en test)  | Niveau des logs pino : `trace`, `debug`, `info`, `warn`, `error`, `silent`.                                            |
 | `front.url`                            | —                          | Présent dans la config mais pas encore utilisé par le code.                                                            |
+
+### Logs
+
+Logs pino : une ligne par requête (méthode, URL, statut, durée), sans en-têtes ni corps. En développement, sortie lisible
+(pino-pretty) ; en production (`NODE_ENV=production`), JSON exploitable par Render. Les champs sensibles (`authorization`,
+`x-app-secret`, mots de passe, tokens, secrets) sont masqués par `[redacted]` s'ils sont journalisés.
 
 ### E-mails
 

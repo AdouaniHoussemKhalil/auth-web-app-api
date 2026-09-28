@@ -76,7 +76,6 @@ const createClientAppHandler = async (req: Request, res: Response, next: NextFun
       data: { appId: newAppClient.id },
     });
   } catch (error) {
-    console.error("Error creating app client:", error);
     next(error);
   }
 };
