@@ -98,6 +98,8 @@ Conventions :
   et `pino-http` chaque requête.
 - Tokens : `generateConsumerToken` / `generateTenantToken` prennent l'identifiant du sujet pour enregistrer le refresh token ;
   le contenu du JWT est construit par `src/services/token/payloads.ts`. Ne jamais mettre de secret dans un payload JWT.
+  Chaque access token porte `sid` (le `jti` de son refresh token) : `verify*Token` refuse un access token dont la session
+  est révoquée. Pour fermer des sessions, révoquer les refresh tokens (`revokeRefreshToken`, `revokeAllRefreshTokens`).
 - Ne pas révéler l'existence d'un compte : mêmes réponses pour un e-mail inconnu (`forgotPassword`, `resendEmailVerification`,
   codes invalides).
 - E-mails : ajouter un template dans `src/services/email/models/Template.ts` (textes en français) et l'envoyer avec

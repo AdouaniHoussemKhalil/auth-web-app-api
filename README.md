@@ -298,24 +298,24 @@ base prend effet au prochain token (connexion ou refresh).
 
 ### Consumers — `/consumers/auth`
 
-| Méthode | Route                      | Jeton consumer | Description                                                                                |
-| ------- | -------------------------- | -------------- | ------------------------------------------------------------------------------------------ |
-| POST    | `/register`                | —              | Inscription ; envoie un code de vérification d'e-mail.                                     |
-| POST    | `/verifyEmail`             | —              | Vérifie l'e-mail (`email`, `code`).                                                        |
-| POST    | `/resendEmailVerification` | —              | Renvoie un code de vérification (`email`).                                                 |
-| POST    | `/login`                   | —              | Connexion → tokens, ou `{ MFARequired: true }` si le MFA est actif.                        |
-| POST    | `/loginByMFA`              | —              | Connexion avec le code MFA (`email`, `mfaCode`) → tokens.                                  |
-| POST    | `/refresh`                 | —              | Échange un refresh token (`refreshToken`) contre une nouvelle paire.                       |
-| POST    | `/logout`                  | —              | Révoque le refresh token (`refreshToken`, `allDevices?`).                                  |
-| POST    | `/forgotPassword`          | —              | Envoie un code de réinitialisation par e-mail (`email`).                                   |
-| POST    | `/verifyResetCode`         | —              | Échange le code (`email`, `resetCode`) contre un `resetToken`.                             |
-| PUT     | `/resetPassword`           | —              | Nouveau mot de passe (`email`, `resetToken`, `password`, `confirmPassword`).               |
-| PUT     | `/updatePassword/:id`      | ✔              | Change le mot de passe (`userId`, `currentPassword`, `password`, `confirmPassword`).       |
-| PUT     | `/updateProfile/:id`       | ✔              | Modifie prénom / nom (`userId`, `newFirstName`, `newLastName`).                            |
-| POST    | `/requestMFA`              | ✔              | Demande d'activation / désactivation (`email`, `requestType`: `activate` \| `deactivate`). |
-| POST    | `/activateMFA`             | ✔              | Confirme l'activation (`userId`, `activationId` = code ou identifiant du lien).            |
-| POST    | `/deactivateMFA`           | ✔              | Confirme la désactivation (`userId`, `deactivationId`).                                    |
-| GET     | `/me/:id`                  | ✔              | Profil du consumer connecté.                                                               |
+| Méthode | Route                      | Jeton consumer | Description                                                                                                                                              |
+| ------- | -------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST    | `/register`                | —              | Inscription ; envoie un code de vérification d'e-mail.                                                                                                   |
+| POST    | `/verifyEmail`             | —              | Vérifie l'e-mail (`email`, `code`).                                                                                                                      |
+| POST    | `/resendEmailVerification` | —              | Renvoie un code de vérification (`email`).                                                                                                               |
+| POST    | `/login`                   | —              | Connexion → tokens, ou `{ MFARequired: true }` si le MFA est actif.                                                                                      |
+| POST    | `/loginByMFA`              | —              | Connexion avec le code MFA (`email`, `mfaCode`) → tokens.                                                                                                |
+| POST    | `/refresh`                 | —              | Échange un refresh token (`refreshToken`) contre une nouvelle paire.                                                                                     |
+| POST    | `/logout`                  | —              | Révoque le refresh token (`refreshToken`, `allDevices?`).                                                                                                |
+| POST    | `/forgotPassword`          | —              | Envoie un code de réinitialisation par e-mail (`email`).                                                                                                 |
+| POST    | `/verifyResetCode`         | —              | Échange le code (`email`, `resetCode`) contre un `resetToken`.                                                                                           |
+| PUT     | `/resetPassword`           | —              | Nouveau mot de passe (`email`, `resetToken`, `password`, `confirmPassword`).                                                                             |
+| PUT     | `/updatePassword/:id`      | ✔              | Change le mot de passe (`userId`, `currentPassword`, `password`, `confirmPassword`) ; ferme les autres sessions et renvoie une nouvelle paire de tokens. |
+| PUT     | `/updateProfile/:id`       | ✔              | Modifie prénom / nom (`userId`, `newFirstName`, `newLastName`).                                                                                          |
+| POST    | `/requestMFA`              | ✔              | Demande d'activation / désactivation (`email`, `requestType`: `activate` \| `deactivate`).                                                               |
+| POST    | `/activateMFA`             | ✔              | Confirme l'activation (`userId`, `activationId` = code ou identifiant du lien).                                                                          |
+| POST    | `/deactivateMFA`           | ✔              | Confirme la désactivation (`userId`, `deactivationId`).                                                                                                  |
+| GET     | `/me/:id`                  | ✔              | Profil du consumer connecté.                                                                                                                             |
 
 Le détail des corps de requête est disponible dans Swagger (`/api-docs`) et dans `src/validation/`.
 
@@ -356,6 +356,8 @@ curl -X POST http://localhost:8080/consumers/auth/login \
 - **Réinitialisation du mot de passe** (tenants et consumers) en deux temps : le code e-mail est échangé contre un
   `resetToken` à usage unique (15 min) ; la réinitialisation ferme toutes les sessions existantes.
 - **Refresh tokens** à usage unique : un token rejoué révoque toutes les sessions de l'utilisateur (détection de vol).
+- **Révocation immédiate** : chaque access token est rattaché à sa session (`sid`). Déconnexion, déconnexion globale,
+  refresh, changement ou réinitialisation du mot de passe et détection de vol invalident aussitôt les access tokens concernés.
 - **Pas d'énumération de comptes** : `forgotPassword` et `resendEmailVerification` répondent pareil que le compte existe ou non ;
   même message pour une application inconnue ou un mauvais secret (comparé en temps constant).
 - **Limitation de débit** sur les routes de connexion, de codes et de mot de passe.
@@ -401,7 +403,5 @@ Les autres erreurs métier ont un code explicite (`invalidCredentials`, `userAlr
 ## Limites connues
 
 - Le mode MFA `both` du modèle n'est pas géré : il se comporte comme `code`.
-- Les access tokens sont sans état : après une déconnexion, un access token déjà émis reste valable jusqu'à son expiration
-  (1 h par défaut).
 - Pas encore de provider d'e-mails HTTP : sur un hébergeur qui bloque SMTP (Render), aucun e-mail ne part (ticket #34).
 - L'image Docker n'a pas encore été testée en conditions réelles.
