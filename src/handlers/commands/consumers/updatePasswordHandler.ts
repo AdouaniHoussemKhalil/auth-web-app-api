@@ -2,6 +2,11 @@ import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../../middleware/error/errorHandler";
 import { compare, hash } from "../../../services/hashing/hash";
 import { Consumer } from "../../../models/Consumer";
+import { consumerTokenPayload } from "../../../services/token/payloads";
+import {
+  generateConsumerToken,
+  revokeAllRefreshTokens,
+} from "../../../services/token/tokenService";
 
 const updatePasswordHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
@@ -49,8 +54,17 @@ const updatePasswordHandler = async (request: Request, response: Response, next:
     user.password = await hash(password);
     await user.save();
 
+    // Toutes les sessions sont fermées (y compris leurs access tokens) ; l'appareil courant reçoit une nouvelle paire.
+    await revokeAllRefreshTokens("consumer", user.id, user.clientId);
+    const tokens = await generateConsumerToken(
+      { jwtPayload: consumerTokenPayload(user) },
+      user.clientId,
+      user.id
+    );
+
     return response.status(201).json({
       message: "update password successfuly",
+      ...tokens,
       isSuccess: true,
     });
   } catch (error) {

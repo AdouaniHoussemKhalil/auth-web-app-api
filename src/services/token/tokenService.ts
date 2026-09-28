@@ -28,8 +28,9 @@ const issueTokenPair = async (options: {
 }): Promise<TokenPair> => {
   const jti = crypto.randomUUID();
 
+  // sid : session (refresh token) à laquelle l'access token est rattaché, pour pouvoir le révoquer.
   const access_token = jwt.sign(
-    { ...options.payload, type: "access" },
+    { ...options.payload, type: "access", sid: jti },
     deriveSecret(options.secretKey, "access"),
     {
       expiresIn: options.accessExpiresIn as SignOptions["expiresIn"],
@@ -57,6 +58,17 @@ const issueTokenPair = async (options: {
   });
 
   return { access_token, refresh_token };
+};
+
+/**
+ * Un access token n'est valable que tant que sa session (le refresh token émis avec lui) n'est pas révoquée :
+ * déconnexion, réinitialisation du mot de passe, rotation ou détection de rejeu l'invalident immédiatement.
+ * Les access tokens émis avant l'ajout de `sid` sont refusés (reconnexion nécessaire).
+ */
+const assertSessionActive = async (decoded: { sid?: string }) => {
+  const active =
+    decoded.sid && (await RefreshToken.exists({ jti: decoded.sid, revokedAt: { $exists: false } }));
+  if (!active) throw new Error("Session has been revoked");
 };
 
 export const generateConsumerToken = async (
@@ -102,13 +114,17 @@ export const verifyConsumerToken = async (
   const appClient = await AppClient.findOne({ id: appId, isActive: true });
   if (!appClient) throw new Error("Invalid App Client for token verification");
 
+  let decoded: any;
   try {
-    return jwt.verify(token, deriveSecret(appClient.secretKey, type), {
+    decoded = jwt.verify(token, deriveSecret(appClient.secretKey, type), {
       audience: appClient.name,
     });
   } catch (err) {
     throw new Error("Invalid or expired user token", { cause: err });
   }
+
+  if (type === "access") await assertSessionActive(decoded);
+  return decoded;
 };
 
 export const verifyTenantToken = async (
@@ -119,12 +135,16 @@ export const verifyTenantToken = async (
   const tenant = await Tenant.findOne({ id: tenantId, isActive: true });
   if (!tenant) throw new Error("Invalid or inactive tenant");
 
+  let decoded: any;
   try {
-    return jwt.verify(token, deriveSecret(tenant.secretKey, type), { audience: AUDIENCE });
+    decoded = jwt.verify(token, deriveSecret(tenant.secretKey, type), { audience: AUDIENCE });
   } catch (err: any) {
     if (err.name === "TokenExpiredError") throw new Error("Token expired", { cause: err });
     throw new Error("Invalid token", { cause: err });
   }
+
+  if (type === "access") await assertSessionActive(decoded);
+  return decoded;
 };
 
 /**
