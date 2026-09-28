@@ -31,6 +31,9 @@ import {
   resendEmailVerificationSchema,
   verifyEmailSchema,
 } from "../../validation/users/emailVerificationSchema";
+import deleteConsumerHandler from "../../handlers/commands/tenants/deleteConsumerHandler";
+import deleteAccountHandler from "../../handlers/commands/tenants/deleteAccountHandler";
+import { deleteTenantAccountSchema } from "../../validation/users/deleteAccountSchema";
 
 const tenantsRoutes = Router();
 
@@ -396,6 +399,83 @@ tenantsRoutes.post(
   authRateLimiter,
   validate(resendEmailVerificationSchema),
   asyncHandler(resendEmailVerificationHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/app/{appId}/consumers/{consumerId}:
+ *   delete:
+ *     summary: Supprime un consumer d'une application du tenant et ses données
+ *     tags: [Tenants Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: appId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: consumerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Consumer supprimé
+ *       404:
+ *         description: Consumer introuvable
+ */
+tenantsRoutes.delete(
+  "/:tenantId/app/:appId/consumers/:consumerId",
+  tenantProtectedActionsAuthToken,
+  requireScope("consumer:delete"),
+  asyncHandler(deleteConsumerHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}:
+ *   delete:
+ *     summary: Supprime le compte tenant en cascade (applications, consumers, sessions)
+ *     tags: [Tenants Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/TenantDeleteAccount'
+ *     responses:
+ *       200:
+ *         description: Compte supprimé
+ *       401:
+ *         description: Suppression non confirmée
+ */
+tenantsRoutes.delete(
+  "/:tenantId",
+  authRateLimiter,
+  validate(deleteTenantAccountSchema),
+  tenantProtectedActionsAuthToken,
+  asyncHandler(deleteAccountHandler)
 );
 
 export default tenantsRoutes;

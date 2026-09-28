@@ -5,7 +5,17 @@ describe("Documentation Swagger", () => {
     const paths = Object.keys(specs.paths);
 
     expect(paths.filter((path) => path.startsWith("/consumers/"))).toHaveLength(16);
-    expect(paths.filter((path) => path.startsWith("/tenants/"))).toHaveLength(13);
+    expect(paths.filter((path) => path.startsWith("/tenants/"))).toHaveLength(14);
     expect(paths.filter((path) => path.startsWith("/config/"))).toHaveLength(5);
+  });
+
+  it("documente les suppressions de compte", () => {
+    const paths = specs.paths as Record<string, Record<string, unknown>>;
+
+    expect(paths["/consumers/auth/me/{id}"]).toHaveProperty("delete");
+    expect(paths["/tenants/{tenantId}"]).toHaveProperty("delete");
+    expect(paths["/tenants/{tenantId}/app/{appId}/consumers/{consumerId}"]).toHaveProperty(
+      "delete"
+    );
   });
 });

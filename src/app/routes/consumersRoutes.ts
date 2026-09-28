@@ -37,6 +37,8 @@ import {
   resendEmailVerificationSchema,
   verifyEmailSchema,
 } from "../../validation/users/emailVerificationSchema";
+import deleteAccountHandler from "../../handlers/commands/consumers/deleteAccountHandler";
+import { deleteConsumerAccountSchema } from "../../validation/users/deleteAccountSchema";
 
 const consumersRoutes = Router();
 
@@ -648,6 +650,38 @@ consumersRoutes.post(
   authRateLimiter,
   validate(resendEmailVerificationSchema),
   asyncHandler(resendEmailVerificationHandler)
+);
+
+/**
+ * @swagger
+ * /consumers/auth/me/{id}:
+ *   delete:
+ *     summary: Supprime le compte du consumer connecté (confirmation par mot de passe)
+ *     tags: [Consumers Authentication]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerDeleteAccount'
+ *     responses:
+ *       200:
+ *         description: Compte et données associées supprimés
+ *       401:
+ *         description: Mot de passe incorrect
+ */
+consumersRoutes.delete(
+  "/auth/me/:id",
+  authRateLimiter,
+  validate(deleteConsumerAccountSchema),
+  consumerProtectedActionsAuthToken,
+  asyncHandler(deleteAccountHandler)
 );
 
 export default consumersRoutes;

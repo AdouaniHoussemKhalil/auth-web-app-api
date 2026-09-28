@@ -61,6 +61,17 @@ const swaggerOptions = {
           properties: { email: { type: "string" }, code: { type: "string" } },
           required: ["email", "code"],
         },
+        ConsumerDeleteAccount: {
+          type: "object",
+          properties: { password: { type: "string" } },
+          required: ["password"],
+        },
+        TenantDeleteAccount: {
+          type: "object",
+          description:
+            "password pour un compte classique, confirmEmail pour un compte Google sans mot de passe",
+          properties: { password: { type: "string" }, confirmEmail: { type: "string" } },
+        },
         ConsumerLogin: {
           type: "object",
           properties: {
