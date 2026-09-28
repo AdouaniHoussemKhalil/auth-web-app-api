@@ -12,9 +12,11 @@ services:
       - mongo
     ports:
       - "8080:8080"
+    # Variables lues par config/custom-environment-variables.json (voir README, « Déploiement »).
     environment:
-      # Surcharge la configuration (paquet `config`) ; ajouter ici SMTP et Google si besoin.
-      NODE_CONFIG: '{"db":{"uri":"mongodb://mongo:27017/auth"}}'
+      MONGODB_URI: mongodb://mongo:27017/auth
+      # En local, les e-mails et leurs codes s'affichent dans les logs du conteneur.
+      EMAIL_PROVIDER: console
 
 volumes:
   mongo-data:
