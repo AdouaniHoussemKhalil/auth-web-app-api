@@ -110,6 +110,9 @@ Conventions :
 - **mongodb-memory-server** télécharge le binaire MongoDB (≈ 80 Mo) au premier lancement ; le premier `npm test` peut être long.
   Définir `MONGOMS_DISABLE_POSTINSTALL=1` pour éviter le téléchargement au `npm install` si le binaire est déjà en cache.
 - **Chemins et globs** : sous Windows, `path.join` produit des antislashs que les globs ne comprennent pas (voir `swagger.ts`).
+- **`config/local.json` est aussi chargé pendant les tests** (le paquet `config` le lit dans tous les environnements) :
+  un test ne doit pas supposer les valeurs de `config/test.json` quand une clé peut être surchargée localement ;
+  relire la valeur avec `config.get(...)`.
 - **Disque presque plein** : MongoDB refuse de construire des index sous 500 Mo libres. Les tests le désactivent
   (`indexBuildMinAvailableDiskSpaceMB=0` dans `tests/helpers/globalSetup.ts`), mais un serveur local peut échouer à créer ses index.
 - La section « Limites connues » du README liste les autres limites.
