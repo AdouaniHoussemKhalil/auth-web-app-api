@@ -5,6 +5,7 @@ import ms from "ms";
 import { templates } from "../../../services/email/models/Template";
 import { Tenant } from "../../../models/Tenant";
 import { CustomError } from "../../../middleware/error/errorHandler";
+import { generateAppSecret } from "../../../utils/random";
 
 const createClientAppHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -12,7 +13,9 @@ const createClientAppHandler = async (req: Request, res: Response, next: NextFun
       tenantId,
       name,
       tokenExpiresIn,
+      refreshTokenExpiresIn,
       resetTokenExpiresIn,
+      requireEmailVerification,
       mfaVerificationMode,
       mfaExpiresIn,
       redirectUrl,
@@ -36,11 +39,13 @@ const createClientAppHandler = async (req: Request, res: Response, next: NextFun
       tenantId: tenantId,
       name,
       tokenExpiresIn,
+      refreshTokenExpiresIn,
       resetTokenExpiresIn,
+      requireEmailVerification,
       redirectUrl,
       resetPasswordUrl,
       logoutUrl,
-      secretKey: randomUUID().toString(),
+      secretKey: generateAppSecret(),
       apiKey: randomUUID().toString(),
       mfaSettings: {
         verificationMode: mfaVerificationMode ?? "code",
@@ -53,6 +58,7 @@ const createClientAppHandler = async (req: Request, res: Response, next: NextFun
         logoUrl: logoUrl,
         primaryColor: primaryColor,
         templates: [
+          { id: templates.emailVerification.id, isActive: true },
           { id: templates.forgotPassword.id, isActive: true },
           { id: templates.loginByCodeMFA.id, isActive: true },
           { id: templates.activateMFA.id, isActive: true },

@@ -9,4 +9,5 @@ export enum SecondaryUserAccessMethodType {
   MFA = "MFA",
   ForgotPassword = "forgotPassword",
   ResetPassword = "resetPassword",
+  EmailVerification = "emailVerification",
 }

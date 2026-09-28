@@ -38,6 +38,13 @@ const loginUserHandler = async (request: Request, response: Response, next: Next
       throw error;
     }
 
+    if (appClient.requireEmailVerification && !user.isEmailVerified) {
+      const error = new Error("Email address is not verified") as CustomError;
+      error.status = 403;
+      error.code = "emailNotVerified";
+      throw error;
+    }
+
     if (user.isMFAActivated) {
       const code = randomSixDigitCode();
       const expiresInMs = (appClient.mfaSettings?.expiryMinutes ?? 15) * 60 * 1000;
@@ -77,7 +84,8 @@ const loginUserHandler = async (request: Request, response: Response, next: Next
 
     const { access_token, refresh_token } = await generateConsumerToken(
       { jwtPayload: returnedUser },
-      appClient.id
+      appClient.id,
+      user.id
     );
 
     return response.status(200).json({

@@ -3,20 +3,15 @@ import { CustomError } from "../../../middleware/error/errorHandler";
 import { generateConsumerToken } from "../../../services/token/tokenService";
 import { Consumer } from "../../../models/Consumer";
 import { hash } from "../../../services/hashing/hash";
+import { UserRole } from "../../../models/enums/UserRole";
+import { sendEmailVerification } from "../../../services/email/sendEmailVerification";
 
 const config = require("config");
 const scopes = config.get("consumer.scopes");
 
 const registerUserHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
-    const {
-      firstName,
-      lastName,
-      email,
-      password,
-      confirmPassword,
-      role = "consumer",
-    } = request.body;
+    const { firstName, lastName, email, password, confirmPassword } = request.body;
 
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
       const error = new Error("Some required fields are missing") as CustomError;
@@ -48,10 +43,13 @@ const registerUserHandler = async (request: Request, response: Response, next: N
       lastName,
       email,
       password: hashedPassword,
-      role,
+      // Le rôle n'est jamais choisi par l'utilisateur final.
+      role: UserRole.CONSUMER,
       scopes,
     });
     await newUser.save();
+
+    await sendEmailVerification(newUser, appClient);
 
     const returnedUser: any = {
       id: newUser.id,
@@ -60,11 +58,22 @@ const registerUserHandler = async (request: Request, response: Response, next: N
       email: newUser.email,
       role: newUser.role,
       scopes: scopes,
+      isEmailVerified: false,
     };
+
+    if (appClient.requireEmailVerification) {
+      return response.status(201).json({
+        message: "User registered, please verify your email",
+        user: returnedUser,
+        emailVerificationRequired: true,
+        isSuccess: true,
+      });
+    }
 
     const { access_token, refresh_token } = await generateConsumerToken(
       { jwtPayload: returnedUser },
-      appClient.id
+      appClient.id,
+      newUser.id
     );
 
     response.status(201).json({

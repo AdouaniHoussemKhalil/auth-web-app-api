@@ -30,7 +30,8 @@ const loginByMFACodeHandler = async (request: Request, response: Response, next:
 
     const { access_token, refresh_token } = await generateTenantToken(
       { jwtPayload: result },
-      tenant.secretKey
+      tenant.secretKey,
+      tenant.id
     );
 
     response.status(200).json({
