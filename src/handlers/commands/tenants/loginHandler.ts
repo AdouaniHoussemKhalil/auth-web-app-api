@@ -26,6 +26,14 @@ const loginHandler = async (req: Request, res: Response, next: NextFunction) => 
       throw error;
     }
 
+    // Un tenant inscrit via Google n'a pas de mot de passe : il doit passer par /tenants/google-register.
+    if (!tenant.password) {
+      const error = new Error("This account uses Google sign-in") as CustomError;
+      error.status = 401;
+      error.code = "useGoogleSignIn";
+      throw error;
+    }
+
     const isPasswordValid = await compare(password, tenant.password);
 
     if (!isPasswordValid) {
@@ -35,7 +43,7 @@ const loginHandler = async (req: Request, res: Response, next: NextFunction) => 
       throw error;
     }
 
-    if (!tenant.isActive || !tenant.isMFAActivated) {
+    if (!tenant.isActive) {
       const error = new Error("User is blocked") as CustomError;
       error.status = 403;
       error.code = "UserBlocked";
@@ -59,7 +67,7 @@ const loginHandler = async (req: Request, res: Response, next: NextFunction) => 
       role: tenant.role,
       scopes: tenant.scopes,
       secretKey: tenant.secretKey,
-      tenantId: tenant._id,
+      tenantId: tenant.id,
     };
 
     const { access_token, refresh_token } = await generateTenantToken(
