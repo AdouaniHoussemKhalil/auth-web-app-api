@@ -1,10 +1,10 @@
 import { Response, Request, NextFunction } from "express";
 import { CustomError } from "../../../middleware/error/errorHandler";
 import { Tenant } from "../../../models/Tenant";
-import { compare, hash } from "../../../services/hashing/hash";
+import { compare } from "../../../services/hashing/hash";
+import { setOneTimeCode } from "../../../services/security/oneTimeCode";
 import { randomSixDigitCode } from "../../../utils/random";
 import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
-import { generateTenantToken } from "../../../services/token/tokenService";
 import { Recipient } from "../../../services/email/models/Recipient";
 import { templates } from "../../../services/email/models/Template";
 import sendTemplateEmail from "../../../services/email/sendMails";
@@ -52,28 +52,8 @@ const loginHandler = async (req: Request, res: Response, next: NextFunction) => 
 
     const code = randomSixDigitCode();
 
-    tenant.secondaryUserAccess = {
-      code: await hash(code),
-      expires: new Date(Date.now() + 15 * 60 * 1000),
-      type: SecondaryUserAccessMethodType.MFA,
-    };
-
+    await setOneTimeCode(tenant, SecondaryUserAccessMethodType.MFA, code, 15 * 60 * 1000);
     await tenant.save();
-
-    const result: any = {
-      firstName: tenant.firstName,
-      lastName: tenant.lastName,
-      email: tenant.email,
-      role: tenant.role,
-      scopes: tenant.scopes,
-      secretKey: tenant.secretKey,
-      tenantId: tenant.id,
-    };
-
-    const { access_token, refresh_token } = await generateTenantToken(
-      { jwtPayload: result },
-      tenant.secretKey
-    );
 
     const recipient: Recipient = {
       email: tenant.email,
@@ -85,11 +65,10 @@ const loginHandler = async (req: Request, res: Response, next: NextFunction) => 
       variable: code,
     });
 
+    // Les tokens ne sont délivrés qu'après validation du code (/tenants/loginByMFACode).
     res.status(200).json({
-      message: "User sign in successfully",
-      user: result,
-      access_token,
-      refresh_token,
+      MFARequired: true,
+      message: "MFA is required, Please check your email for the verification code.",
       isSuccess: true,
     });
   } catch (error) {
