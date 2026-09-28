@@ -43,4 +43,7 @@ const MFARequestSchema = new Schema<IMFARequest>({
   createdAt: { type: Date, default: Date.now },
 });
 
+// Recherche de la dernière demande en attente (verifyMFARequest) et expiration des précédentes.
+MFARequestSchema.index({ userId: 1, clientId: 1, type: 1, status: 1, createdAt: -1 });
+
 export const MFARequest = mongoose.model<IMFARequest>("MFARequest", MFARequestSchema);

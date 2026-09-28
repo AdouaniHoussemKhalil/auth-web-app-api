@@ -14,7 +14,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "db:check-duplicates": "ts-node scripts/checkDuplicateIds.ts"
   },
   "keywords": [],
   "author": "",
