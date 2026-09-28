@@ -8,6 +8,7 @@ import updateClientAppHandler from "../../handlers/commands/configurations/updat
 import { updateClientAppSchema } from "../../validation/configurations/updateClientAppSchema";
 import getAppClientsQuery from "../../handlers/queries/configurations/getAppClientsQuery";
 import getAppClientByIdQuery from "../../handlers/queries/configurations/getAppClientByIdQuery";
+import rotateClientAppSecretHandler from "../../handlers/commands/configurations/rotateClientAppSecretHandler";
 
 const configurationsRoutes = Router();
 
@@ -142,6 +143,40 @@ configurationsRoutes.get(
   "/apps/:tenantId/:appId",
   tenantProtectedActionsAuthToken,
   asyncHandler(getAppClientByIdQuery)
+);
+
+/**
+ * @swagger
+ * /config/apps/{tenantId}/{appId}/rotate-secret:
+ *   post:
+ *     summary: Régénère le secret d'une application et révoque les sessions de ses consumers
+ *     tags: [Configurations]
+ *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: appId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Nouveau secret (affiché une seule fois dans cette réponse)
+ *       404:
+ *         description: Application introuvable pour ce tenant
+ */
+configurationsRoutes.post(
+  "/apps/:tenantId/:appId/rotate-secret",
+  tenantProtectedActionsAuthToken,
+  asyncHandler(rotateClientAppSecretHandler)
 );
 
 export default configurationsRoutes;
