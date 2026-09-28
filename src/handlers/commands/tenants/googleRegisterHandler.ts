@@ -1,4 +1,4 @@
-import e, { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { OAuth2Client } from "google-auth-library";
 import { Tenant } from "../../../models/Tenant";
 import crypto from "crypto";
@@ -12,11 +12,7 @@ const scopes = config.get("tenant.scopes");
 
 const client = new OAuth2Client(googleConfig.clientId);
 
-export const googleRegister = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const googleRegister = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { token } = req.body;
 
@@ -47,7 +43,7 @@ export const googleRegister = async (
         isByGoogle: true,
         isMFAActivated: false,
         role: UserRole.TENANT,
-        scopes
+        scopes,
       });
 
       await tenant.save();

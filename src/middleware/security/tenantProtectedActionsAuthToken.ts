@@ -10,9 +10,7 @@ export const tenantProtectedActionsAuthToken = async (
     const authHeader = req.header("Authorization");
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res
-        .status(401)
-        .json({ message: "Missing or invalid Authorization header" });
+      return res.status(401).json({ message: "Missing or invalid Authorization header" });
     }
 
     const token = authHeader.split(" ")[1];

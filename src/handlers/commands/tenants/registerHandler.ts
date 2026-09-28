@@ -1,4 +1,4 @@
-import e, { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { Tenant } from "../../../models/Tenant";
 import crypto from "crypto";
 import { CustomError } from "../../../middleware/error/errorHandler";
@@ -8,14 +8,9 @@ import { generateTenantToken } from "../../../services/token/tokenService";
 const config = require("config");
 const scopes = config.get("tenant.scopes");
 
-const registerHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const registerHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password, confirmPassword, firstName, lastName, role } =
-      req.body;
+    const { email, password, confirmPassword, firstName, lastName, role } = req.body;
 
     if (!email || !password || !confirmPassword || !firstName || !lastName) {
       const error = new Error("All fields are required") as CustomError;
@@ -54,7 +49,7 @@ const registerHandler = async (
       role,
       scopes,
       isActive: true,
-      isMFAActivated: true
+      isMFAActivated: true,
     });
 
     await newTenant.save();
@@ -66,7 +61,7 @@ const registerHandler = async (
       secretKey: secretKey,
       role: role,
       scopes: scopes,
-      tenantId: tenantId
+      tenantId: tenantId,
     };
 
     const { access_token, refresh_token } = await generateTenantToken(

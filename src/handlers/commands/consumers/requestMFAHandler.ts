@@ -19,15 +19,11 @@ async function generateHashedLinkId(email: string): Promise<string> {
   return await hash(data);
 }
 
-const requestMFAHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const requestMFAHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const appClient = (req as any).appClient;
 
-    const { userId, requestType, email} = req.body;
+    const { requestType, email } = req.body;
 
     const user = await Consumer.findOne({ email: email });
 
@@ -85,7 +81,7 @@ const requestMFAHandler = async (
 
     const emailConfig = {
       [MFARequestType.ACTIVATE]: {
-        link: `${appClient.redirectUrl}/auth/MFA/activate?&r=${requestConfig.verificationlinkId ?? "" }`,
+        link: `${appClient.redirectUrl}/auth/MFA/activate?&r=${requestConfig.verificationlinkId ?? ""}`,
         codeTemplate: templates.activateMFA.id,
         linkTemplate: templates.mfaActivationRequest.id,
       },
@@ -96,7 +92,10 @@ const requestMFAHandler = async (
       },
     }[requestType as MFARequestType];
 
-    const emailVariable = appClient.mfaSettings?.verificationMode === "code" ? requestConfig.verificationCode : emailConfig.link;
+    const emailVariable =
+      appClient.mfaSettings?.verificationMode === "code"
+        ? requestConfig.verificationCode
+        : emailConfig.link;
     const templateId =
       appClient.mfaSettings?.verificationMode === "code"
         ? emailConfig.codeTemplate
@@ -112,9 +111,7 @@ const requestMFAHandler = async (
       variable: emailVariable,
     });
 
-    return res
-      .status(200)
-      .json({ message: "MFA request processed", isSuccess: true });
+    return res.status(200).json({ message: "MFA request processed", isSuccess: true });
   } catch (error) {
     next(error);
   }

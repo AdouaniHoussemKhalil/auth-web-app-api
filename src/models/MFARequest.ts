@@ -3,7 +3,6 @@ import { MFARequestType } from "./enums/MFARequestType";
 import { MFARequestStatus } from "./enums/MFARequestStatus";
 import { MFAMethod } from "./enums/MFAMethod";
 
-
 interface Verification {
   type: "code" | "link";
   code?: string;
@@ -28,13 +27,17 @@ const VerificationSchema = new Schema<Verification>({
 });
 
 const MFARequestSchema = new Schema<IMFARequest>({
-  userId: { type: String , required: true },
+  userId: { type: String, required: true },
   clientId: { type: String, required: true },
   type: { type: String, enum: Object.values(MFARequestType), required: true },
   method: { type: String, enum: Object.values(MFAMethod), required: true },
-  verification: { type: VerificationSchema , required: true },
+  verification: { type: VerificationSchema, required: true },
   expiresAt: { type: Date, required: true },
-  status: { type: String, enum: Object.values(MFARequestStatus), default: MFARequestStatus.PENDING },
+  status: {
+    type: String,
+    enum: Object.values(MFARequestStatus),
+    default: MFARequestStatus.PENDING,
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

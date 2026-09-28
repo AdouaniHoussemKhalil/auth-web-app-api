@@ -2,7 +2,6 @@ import { Router } from "express";
 import { consumerActionsAuthToken } from "../../middleware/security/consumerActionsAuthToken";
 import validate from "../../middleware/validation/validateSchema";
 import { registerSchema } from "../../validation/users/registerSchema";
-import registerHandler from "../../handlers/commands/tenants/registerHandler";
 import { asyncHandler } from ".";
 import { loginSchema } from "../../validation/users/loginSchema";
 import loginUserHandler from "../../handlers/commands/consumers/loginUserHandler";
@@ -61,11 +60,7 @@ consumersRoutes.use(consumerActionsAuthToken);
  *       400:
  *         description: Données invalides
  */
-consumersRoutes.post(
-  "/auth/register",
-  validate(registerSchema),
-  asyncHandler(registerUserHandler)
-);
+consumersRoutes.post("/auth/register", validate(registerSchema), asyncHandler(registerUserHandler));
 
 /**
  * @swagger
@@ -96,11 +91,7 @@ consumersRoutes.post(
  *       401:
  *         description: Identifiants invalides
  */
-consumersRoutes.post(
-  "/auth/login",
-  validate(loginSchema),
-  asyncHandler(loginUserHandler)
-);
+consumersRoutes.post("/auth/login", validate(loginSchema), asyncHandler(loginUserHandler));
 
 /**
  * @swagger
@@ -451,7 +442,6 @@ consumersRoutes.post(
   consumerProtectedActionsAuthToken,
   asyncHandler(requestMFAHandler)
 );
-
 
 /**
  * @swagger

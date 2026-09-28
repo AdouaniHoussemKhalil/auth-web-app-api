@@ -3,15 +3,11 @@ import { Tenant } from "../../../models/Tenant";
 import { CustomError } from "../../../middleware/error/errorHandler";
 import AppClient from "../../../models/AppClient";
 
-const updateClientAppHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const updateClientAppHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { tenantId, appId } = req.params;
 
-    const tenant = await Tenant.findOne({id: tenantId});
+    const tenant = await Tenant.findOne({ id: tenantId });
 
     if (!tenant) {
       const error = new Error("Tenant not exist") as CustomError;
@@ -20,7 +16,7 @@ const updateClientAppHandler = async (
       throw error;
     }
 
-    const app = await AppClient.findOne({id: appId});
+    const app = await AppClient.findOne({ id: appId });
 
     if (!app || app.tenantId !== tenantId) {
       const error = new Error("App client not exist") as CustomError;

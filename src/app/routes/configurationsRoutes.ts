@@ -38,7 +38,7 @@ const configurationsRoutes = Router();
 
 configurationsRoutes.post(
   "/apps/create",
-  tenantProtectedActionsAuthToken, 
+  tenantProtectedActionsAuthToken,
   validate(createClientAppSchema),
   asyncHandler(createClientAppHandler)
 );
@@ -111,7 +111,6 @@ configurationsRoutes.get(
   asyncHandler(getAppClientsQuery)
 );
 
-
 /**
  * @swagger
  * /config/apps/{tenantId}/{appId}:
@@ -143,6 +142,6 @@ configurationsRoutes.get(
   "/apps/:tenantId/:appId",
   tenantProtectedActionsAuthToken,
   asyncHandler(getAppClientByIdQuery)
-)
+);
 
 export default configurationsRoutes;

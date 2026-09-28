@@ -9,11 +9,7 @@ import sendTemplateEmail from "../../../services/email/sendMails";
 import { Consumer } from "../../../models/Consumer";
 import { compare, hash } from "../../../services/hashing/hash";
 
-const loginUserHandler = async (
-  request: Request,
-  response: Response,
-  next: NextFunction
-) => {
+const loginUserHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
     const { email, password } = request.body;
     if (!email || !password) {
@@ -81,8 +77,7 @@ const loginUserHandler = async (
       });
       response.status(201).json({
         MFARequired: true,
-        message:
-          "MFA is required, Please check your email for the verification code.",
+        message: "MFA is required, Please check your email for the verification code.",
       });
     }
 

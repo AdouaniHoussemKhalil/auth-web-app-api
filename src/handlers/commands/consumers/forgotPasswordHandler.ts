@@ -9,12 +9,7 @@ import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/Seco
 import { hash } from "../../../services/hashing/hash";
 import ms from "ms";
 
-
-const forgotPasswordHandler = async (
-  request: Request,
-  response: Response,
-  next: NextFunction
-) => {
+const forgotPasswordHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
     const appClient = (request as any).appClient;
 

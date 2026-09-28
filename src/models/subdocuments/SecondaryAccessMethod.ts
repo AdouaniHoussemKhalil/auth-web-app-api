@@ -6,5 +6,5 @@ export interface SecondaryUserAccessMethod {
 
 export enum SecondaryUserAccessMethodType {
   MFA = "MFA",
-  ForgotPassword = "forgotPassword"
+  ForgotPassword = "forgotPassword",
 }

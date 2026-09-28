@@ -1,3 +1,4 @@
+import path from "path";
 import swaggerJsDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import { Express } from "express";
@@ -37,7 +38,7 @@ const swaggerOptions = {
             lastName: { type: "string" },
             email: { type: "string" },
             password: { type: "string" },
-            confirmPassword: {type: "string"},
+            confirmPassword: { type: "string" },
             role: { type: "string", enum: Object.values(UserRole) },
           },
           required: ["email", "password", "firstName", "lastName", "role"],
@@ -92,12 +93,7 @@ const swaggerOptions = {
             password: { type: "string" },
             confirmPassword: { type: "string" },
           },
-          required: [
-            "userId",
-            "currentPassword",
-            "password",
-            "confirmPassword",
-          ],
+          required: ["userId", "currentPassword", "password", "confirmPassword"],
         },
         ConsumerActivateMFA: {
           type: "object",
@@ -145,14 +141,7 @@ const swaggerOptions = {
             confirmPassword: { type: "string" },
             role: { type: "string", enum: Object.values(UserRole) },
           },
-          required: [
-            "firstName",
-            "lastName",
-            "email",
-            "password",
-            "confirmPassword",
-            "role",
-          ],
+          required: ["firstName", "lastName", "email", "password", "confirmPassword", "role"],
         },
         TenantLogin: {
           type: "object",
@@ -186,7 +175,7 @@ const swaggerOptions = {
             resetTokenExpiresIn: { type: "string" },
             mfaExpiresIn: { type: "string" },
             redirectUrl: { type: "string" },
-            resetPasswordUrl: {type: "string"},
+            resetPasswordUrl: { type: "string" },
             logoutUrl: { type: "string" },
             supportEmail: { type: "string" },
             logoUrl: { type: "string" },
@@ -213,7 +202,7 @@ const swaggerOptions = {
     },
     security: [{ bearerAuth: [] }, { AppAuth: [] }, { AppSecret: [] }],
   },
-  apis: ["**/routes/*.ts"],
+  apis: [path.join(__dirname, "../routes/*.{ts,js}")],
 };
 
 const specs = swaggerJsDoc(swaggerOptions);

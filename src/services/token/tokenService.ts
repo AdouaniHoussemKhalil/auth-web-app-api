@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import crypto from "crypto";
 import AppClient from "../../models/AppClient";
 import { Tenant } from "../../models/Tenant";
@@ -23,20 +23,18 @@ export const generateConsumerToken = async (
     .update(appClient.secretKey + "_refresh")
     .digest("hex");
 
-  const accessExpiresIn = appClient.tokenExpiresIn || "1h";
-  const refreshExpiresIn = appClient.resetTokenExpiresIn || "7d";
+  const accessExpiresIn = (appClient.tokenExpiresIn || "1h") as SignOptions["expiresIn"];
+  const refreshExpiresIn = (appClient.resetTokenExpiresIn || "7d") as SignOptions["expiresIn"];
 
-  const access_token = jwt.sign(
-    { ...payload, appId, type: "access" },
-    accessSecret,
-    { expiresIn: accessExpiresIn, audience: appClient.name }
-  );
+  const access_token = jwt.sign({ ...payload, appId, type: "access" }, accessSecret, {
+    expiresIn: accessExpiresIn,
+    audience: appClient.name,
+  });
 
-  const refresh_token = jwt.sign(
-    { ...payload, appId, type: "refresh" },
-    refreshSecret,
-    { expiresIn: refreshExpiresIn, audience: appClient.name }
-  );
+  const refresh_token = jwt.sign({ ...payload, appId, type: "refresh" }, refreshSecret, {
+    expiresIn: refreshExpiresIn,
+    audience: appClient.name,
+  });
 
   return { access_token, refresh_token };
 };
@@ -47,8 +45,7 @@ export const verifyConsumerToken = async (
   type: "access" | "refresh" = "access"
 ): Promise<any> => {
   const appClient = await AppClient.findOne({ id: appId, isActive: true });
-  if (!appClient)
-    throw new Error("Invalid App Client for token verificationsss");
+  if (!appClient) throw new Error("Invalid App Client for token verificationsss");
 
   const secret = crypto
     .createHash("sha256")
@@ -58,7 +55,7 @@ export const verifyConsumerToken = async (
   try {
     return jwt.verify(token, secret, { audience: appClient.name });
   } catch (err) {
-    throw new Error("Invalid or expired user token");
+    throw new Error("Invalid or expired user token", { cause: err });
   }
 };
 
@@ -78,8 +75,8 @@ export const verifyTenantToken = async (
   try {
     return jwt.verify(token, secret, { audience: AUDIENCE });
   } catch (err: any) {
-    if (err.name === "TokenExpiredError") throw new Error("Token expired");
-    throw new Error("Invalid token");
+    if (err.name === "TokenExpiredError") throw new Error("Token expired", { cause: err });
+    throw new Error("Invalid token", { cause: err });
   }
 };
 
@@ -102,10 +99,9 @@ export const generateTenantToken = async (
     audience: "tenant2025",
   });
 
-  const refresh_token = jwt.sign(
-    { ...payload, type: "refresh" },
-    refreshSecret,
-    { expiresIn: "7d", audience: "tenant2025" }
-  );
+  const refresh_token = jwt.sign({ ...payload, type: "refresh" }, refreshSecret, {
+    expiresIn: "7d",
+    audience: "tenant2025",
+  });
   return { access_token, refresh_token };
 };
