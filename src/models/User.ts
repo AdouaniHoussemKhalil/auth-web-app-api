@@ -27,6 +27,7 @@ const secondaryUserAccess = new Schema<SecondaryUserAccessMethod>({
   code: { type: String },
   expires: { type: Date },
   type: { type: String, enum: Object.values(SecondaryUserAccessMethodType), required: true },
+  attempts: { type: Number, default: 0 },
 });
 
 export const UserSchema: Schema = new Schema<IUser>({

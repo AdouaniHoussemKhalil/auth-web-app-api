@@ -7,7 +7,8 @@ import { templates } from "../../../services/email/models/Template";
 import { Recipient } from "../../../services/email/models/Recipient";
 import sendTemplateEmail from "../../../services/email/sendMails";
 import { Consumer } from "../../../models/Consumer";
-import { compare, hash } from "../../../services/hashing/hash";
+import { compare } from "../../../services/hashing/hash";
+import { setOneTimeCode } from "../../../services/security/oneTimeCode";
 
 const loginUserHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
@@ -40,11 +41,7 @@ const loginUserHandler = async (request: Request, response: Response, next: Next
     if (user.isMFAActivated) {
       const code = randomSixDigitCode();
       const expiresInMs = (appClient.mfaSettings?.expiryMinutes ?? 15) * 60 * 1000;
-      user.secondaryUserAccess = {
-        code: await hash(code),
-        expires: new Date(Date.now() + expiresInMs),
-        type: SecondaryUserAccessMethodType.MFA,
-      };
+      await setOneTimeCode(user, SecondaryUserAccessMethodType.MFA, code, expiresInMs);
 
       const recipient: Recipient = {
         email: user.email,
