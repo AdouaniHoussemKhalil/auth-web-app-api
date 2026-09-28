@@ -1,21 +1,21 @@
 import { NextFunction, Request, Response } from "express";
 import AppClient from "../../../models/AppClient";
 import { randomUUID } from "crypto";
+import ms from "ms";
 import { templates } from "../../../services/email/models/Template";
 import { Tenant } from "../../../models/Tenant";
 import { CustomError } from "../../../middleware/error/errorHandler";
+import { generateAppSecret } from "../../../utils/random";
 
-const createClientAppHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const createClientAppHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const {
       tenantId,
       name,
       tokenExpiresIn,
+      refreshTokenExpiresIn,
       resetTokenExpiresIn,
+      requireEmailVerification,
       mfaVerificationMode,
       mfaExpiresIn,
       redirectUrl,
@@ -26,7 +26,7 @@ const createClientAppHandler = async (
       resetPasswordUrl,
     } = req.body;
 
-    const tenant = await Tenant.findOne({id: tenantId});
+    const tenant = await Tenant.findOne({ id: tenantId });
     if (!tenant) {
       const error = new Error("Tenant not exist") as CustomError;
       error.status = 401;
@@ -39,18 +39,17 @@ const createClientAppHandler = async (
       tenantId: tenantId,
       name,
       tokenExpiresIn,
+      refreshTokenExpiresIn,
       resetTokenExpiresIn,
+      requireEmailVerification,
       redirectUrl,
       resetPasswordUrl,
       logoutUrl,
-      appId: randomUUID().toString(),
-      secretKey: randomUUID().toString(),
+      secretKey: generateAppSecret(),
       apiKey: randomUUID().toString(),
       mfaSettings: {
-        verification: {
-          type: mfaVerificationMode,
-          expiresIn: mfaExpiresIn,
-        },
+        verificationMode: mfaVerificationMode ?? "code",
+        expiryMinutes: mfaExpiresIn ? Math.ceil(ms(mfaExpiresIn as ms.StringValue) / 60000) : 15,
       },
       isActive: true,
       branding: {
@@ -59,6 +58,7 @@ const createClientAppHandler = async (
         logoUrl: logoUrl,
         primaryColor: primaryColor,
         templates: [
+          { id: templates.emailVerification.id, isActive: true },
           { id: templates.forgotPassword.id, isActive: true },
           { id: templates.loginByCodeMFA.id, isActive: true },
           { id: templates.activateMFA.id, isActive: true },
@@ -76,7 +76,6 @@ const createClientAppHandler = async (
       data: { appId: newAppClient.id },
     });
   } catch (error) {
-    console.error("Error creating app client:", error);
     next(error);
   }
 };

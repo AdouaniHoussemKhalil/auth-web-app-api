@@ -1,9 +1,9 @@
 {
   "db": {
-    "uri": "mongodb+srv://ChatCraftUsers:ChUsers2025@chusersapi.qejbi.mongodb.net/?retryWrites=true&w=majority&appName=ChUsersApi"
+    "uri": ""
   },
   "google": {
-    "clientId": "534375870121-ec21gvd6ok6kbljd0q817urki9ufqd54.apps.googleusercontent.com"
+    "clientId": ""
   },
   "tenant": {
     "scopes": [
@@ -18,7 +18,7 @@
       "app:delete"
     ]
   },
-    "consumer":{
+  "consumer":{
     "scopes": [
       "consumer:activateMFA",
       "consumer:deactivateMFA",
@@ -27,6 +27,7 @@
     ]
   },
   "aud": "tenant2025",
+
   "server": {
     "port": 8080
   },
@@ -40,7 +41,7 @@
       "secure": true,
       "auth": {
         "user": "houssemadouani09@gmail.com",
-        "pass": "aeghxpfgvdgaptna"
+        "pass": ""
       }
     },
     "info": {

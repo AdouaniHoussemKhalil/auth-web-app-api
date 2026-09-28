@@ -3,70 +3,21 @@ import { Tenant } from "../../../models/Tenant";
 import { CustomError } from "../../../middleware/error/errorHandler";
 import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
 import { generateTenantToken } from "../../../services/token/tokenService";
-import { compare } from "../../../services/hashing/hash";
+import { consumeOneTimeCode } from "../../../services/security/oneTimeCode";
 
-const loginByMFACodeHandler = async (
-  request: Request,
-  response: Response,
-  next: NextFunction
-) => {
+const loginByMFACodeHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
     const { email, mfaCode } = request.body;
 
-    if (!email || !mfaCode) {
-      const error = new Error("Missing required fields") as CustomError;
-      error.status = 400;
-      throw error;
-    }
-
     const tenant = await Tenant.findOne({ email });
     if (!tenant) {
-      const error = new Error("User not found") as CustomError;
-      error.status = 404;
-      throw error;
-    }
-
-    const { code, expires, type } = tenant.secondaryUserAccess ?? {};
-
-    if (
-      !tenant.secondaryUserAccess ||
-      !code ||
-      !expires ||
-      !type ||
-      type !== SecondaryUserAccessMethodType.MFA
-    ) {
-      const error = new Error("An error occurred with mfa code") as CustomError;
+      const error = new Error("Invalid code") as CustomError;
       error.status = 400;
-      error.code = "errorOcurredWithMfaCode";
+      error.code = "invalidCode";
       throw error;
     }
 
-    if (!(expires instanceof Date)) {
-      const error = new Error("invalid expiration date") as CustomError;
-      error.status = 400;
-      error.code = "invalidExpirationDate";
-      throw error;
-    }
-
-    if (Date.now() > expires.getTime()) {
-      tenant.secondaryUserAccess = undefined;
-      await tenant.save();
-      const error = new Error("Expired reset code") as CustomError;
-      error.status = 400;
-      error.code = "expiredResetCode";
-      throw error;
-    }
-
-    
-    if (!await compare(mfaCode, code)) {
-      const error    = new Error("Invalid MFA code") as CustomError;
-      error.status = 400;
-      error.code = "invalidMfaCode";
-      throw error;
-    }
-
-    tenant.secondaryUserAccess = undefined;
-    await tenant.save();
+    await consumeOneTimeCode(tenant, SecondaryUserAccessMethodType.MFA, mfaCode);
 
     const result: any = {
       tenantId: tenant.id,
@@ -74,10 +25,14 @@ const loginByMFACodeHandler = async (
       lastName: tenant.lastName,
       email: tenant.email,
       role: tenant.role,
-      scopes: tenant.scopes
+      scopes: tenant.scopes,
     };
 
-    const {access_token, refresh_token} = await generateTenantToken({ jwtPayload: result }, tenant.secretKey);
+    const { access_token, refresh_token } = await generateTenantToken(
+      { jwtPayload: result },
+      tenant.secretKey,
+      tenant.id
+    );
 
     response.status(200).json({
       result,
@@ -92,4 +47,3 @@ const loginByMFACodeHandler = async (
 };
 
 export default loginByMFACodeHandler;
-    

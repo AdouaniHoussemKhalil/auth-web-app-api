@@ -10,7 +10,6 @@ const TemplateSchema = new Schema<Template>({
   isActive: { type: Boolean, default: true },
 });
 
-
 interface AppClientBranding {
   appName: string;
   primaryColor: string;
@@ -20,24 +19,26 @@ interface AppClientBranding {
 }
 
 interface MFASettings {
-  verificationMode: "code" | "link" | "both";
-  expiryMinutes: number; 
+  verificationMode: "code" | "link";
+  expiryMinutes: number;
 }
 
 const MFASettingsSchema = new Schema<MFASettings>({
-  verificationMode: { type: String, enum: ["code", "link", "both"], default: "code" },
+  verificationMode: { type: String, enum: ["code", "link"], default: "code" },
   expiryMinutes: { type: Number, default: 15 },
 });
 
 export interface IAppClient extends Document {
   id: string;
-  tenantId:  string;
+  tenantId: string;
   name: string;
   secretKey: string;
   apiKey: string;
   tokenExpiresIn?: string;
+  refreshTokenExpiresIn?: string;
   resetTokenExpiresIn?: string;
-  mfaSettings?: MFASettings; 
+  requireEmailVerification: boolean;
+  mfaSettings?: MFASettings;
   isActive: boolean;
   allowedOrigins?: string[];
   redirectUrl: string;
@@ -58,12 +59,14 @@ const AppClientBrandingSchema = new Schema<AppClientBranding>({
 
 const AppClientSchema = new Schema<IAppClient>({
   id: { type: String, required: true, unique: true },
-  tenantId: { type:  String, required: true },
+  tenantId: { type: String, required: true },
   name: { type: String, required: true },
   secretKey: { type: String, required: true },
   apiKey: { type: String, required: true },
-  tokenExpiresIn: { type: String, default: "7d" },
+  tokenExpiresIn: { type: String, default: "1h" },
+  refreshTokenExpiresIn: { type: String, default: "7d" },
   resetTokenExpiresIn: { type: String, default: "15m" },
+  requireEmailVerification: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
   allowedOrigins: { type: [String], default: [] },
   mfaSettings: { type: MFASettingsSchema, default: {} },
@@ -74,5 +77,8 @@ const AppClientSchema = new Schema<IAppClient>({
   scopes: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now },
 });
+
+// Liste des applications d'un tenant.
+AppClientSchema.index({ tenantId: 1, isActive: -1, createdAt: -1 });
 
 export default mongoose.model<IAppClient>("AppClient", AppClientSchema);

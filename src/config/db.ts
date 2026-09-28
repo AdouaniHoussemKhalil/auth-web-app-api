@@ -1,15 +1,20 @@
-import config from "config";
+import { logger } from "../utils/logger";
 import mongoose, { MongooseError } from "mongoose";
 
-const MONGO_URI: string = config.get("db.uri");
+mongoose.connection.on("connected", () => {
+  logger.info("Mongoose connected to DB");
+});
 
-mongoose
-  .connect(MONGO_URI)
-  .then(() => {
-    console.log("Connected to DB");
-  })
-  .catch((error: MongooseError) => {
-    console.error("Error connecting to DB:", error);
-  });
+mongoose.connection.on("error", (error: MongooseError) => {
+  logger.error({ err: error }, "Mongoose connection error");
+});
+
+mongoose.connection.on("disconnected", () => {
+  logger.warn("Mongoose disconnected");
+});
+
+export const connectDB = async (uri: string) => {
+  await mongoose.connect(uri);
+};
 
 export default mongoose;

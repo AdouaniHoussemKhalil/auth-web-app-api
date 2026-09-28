@@ -1,6 +1,10 @@
 import { Router } from "express";
 import { tenantProtectedActionsAuthToken } from "../../middleware/security/tenantProtectedActionsAuthToken";
 import { asyncHandler } from ".";
+import validateQuery from "../../middleware/validation/validateQuery";
+import { consumersListSchema } from "../../validation/paginationSchema";
+import { requireScope } from "../../middleware/security/requireScope";
+import { authRateLimiter } from "../../middleware/security/rateLimiter";
 import getConsumersQuery from "../../handlers/queries/tenants/getConsumersQuery";
 import getConsumerByIdQuery from "../../handlers/queries/tenants/getConsumerByIdQuery";
 import { registerSchema } from "../../validation/users/registerSchema";
@@ -12,36 +16,78 @@ import { googleRegister } from "../../handlers/commands/tenants/googleRegisterHa
 import { googleLoginSchema } from "../../validation/users/googleLoginSchema";
 import { loginSchema } from "../../validation/users/loginSchema";
 import loginByCodeMFAHandler from "../../handlers/commands/tenants/loginByMFACodeHandler";
+import refreshTokenHandler from "../../handlers/commands/tenants/refreshTokenHandler";
+import logoutHandler from "../../handlers/commands/tenants/logoutHandler";
+import { logoutSchema, refreshTokenSchema } from "../../validation/users/refreshTokenSchema";
+import forgotPasswordHandler from "../../handlers/commands/tenants/forgotPasswordHandler";
+import verifyResetCodeHandler from "../../handlers/commands/tenants/verifyResetCodeHandler";
+import resetPasswordHandler from "../../handlers/commands/tenants/resetPasswordHandler";
+import { forgotPasswordSchema } from "../../validation/users/forgotPasswordSchema";
+import { verifyResetCodeSchema } from "../../validation/users/verifyResetCodeSchema";
+import { resetPasswordSchema } from "../../validation/users/resetPasswordSchema";
+import verifyEmailHandler from "../../handlers/commands/tenants/verifyEmailHandler";
+import resendEmailVerificationHandler from "../../handlers/commands/tenants/resendEmailVerificationHandler";
+import {
+  resendEmailVerificationSchema,
+  verifyEmailSchema,
+} from "../../validation/users/emailVerificationSchema";
+import deleteConsumerHandler from "../../handlers/commands/tenants/deleteConsumerHandler";
+import deleteAccountHandler from "../../handlers/commands/tenants/deleteAccountHandler";
+import { deleteTenantAccountSchema } from "../../validation/users/deleteAccountSchema";
 
 const tenantsRoutes = Router();
 
 /**
  * @swagger
- * /tenants/{tenantId}/consumers:
+ * /tenants/{tenantId}/app/{appId}/consumers:
  *   get:
- *     summary: Récupère la liste des consommateurs pour un tenant donné
+ *     summary: Récupère la liste des consommateurs d'une application du tenant
  *     tags: [Tenants Authentication]
  *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
  *       - in: path
  *         name: tenantId
  *         required: true
  *         schema:
  *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *              $ref: '#/components/schemas/TenantConsumers'
+ *       - in: path
+ *         name: appId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *       - in: query
+ *         name: email
+ *         description: Recherche partielle, insensible à la casse
+ *         schema:
+ *           type: string
  *     responses:
- *       201:
+ *       200:
  *         description: Liste des consommateurs récupérée avec succès
- *       400:
- *         description: Liste des consommateurs non récupérée
+ *       401:
+ *         description: Token tenant manquant
  */
 tenantsRoutes.get(
-  "/tenants/{tenantId}/consumers",
+  "/:tenantId/app/:appId/consumers",
   tenantProtectedActionsAuthToken,
+  validateQuery(consumersListSchema),
+  requireScope("consumer:read"),
   asyncHandler(getConsumersQuery)
 );
 
@@ -52,6 +98,11 @@ tenantsRoutes.get(
  *     summary: Récupère les détails d'un consommateur pour un tenant donné par id
  *     tags: [Tenants Authentication]
  *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
  *       - in: path
  *         name: tenantId
  *         required: true
@@ -67,23 +118,17 @@ tenantsRoutes.get(
  *         required: true
  *         schema:
  *           type: string
- *
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *              $ref: '#/components/schemas/TenantConsumers'
  *     responses:
- *       201:
- *         description: Liste des consommateurs récupérée avec succès
- *       400:
- *         description: Liste des consommateurs non récupérée
+ *       200:
+ *         description: Détails du consommateur
+ *       404:
+ *         description: Consommateur introuvable
  */
 
 tenantsRoutes.get(
   "/:tenantId/app/:appId/consumers/:consumerId",
   tenantProtectedActionsAuthToken,
+  requireScope("consumer:read"),
   asyncHandler(getConsumerByIdQuery)
 );
 
@@ -101,22 +146,23 @@ tenantsRoutes.get(
  *              $ref: '#/components/schemas/TenantRegister'
  *     responses:
  *       201:
- *         description: Tenant créé avec succès
+ *         description: Tenant créé ; un code de vérification est envoyé par e-mail (aucun token)
  *       400:
  *         description: Echec de la création du tenant
  */
 
 tenantsRoutes.post(
   "/register",
+  authRateLimiter,
   validate(registerSchema),
   asyncHandler(registerHandler)
 );
 
 /**
  * @swagger
- * /tenants/login:
+ * /tenants/loginByMFACode:
  *   post:
- *     summary: Authentifie un tenant avec MFA et retourne un token JWT
+ *     summary: Valide le code MFA reçu par e-mail et retourne les tokens JWT du tenant
  *     tags: [Tenants Authentication]
  *     requestBody:
  *       required: true
@@ -133,6 +179,7 @@ tenantsRoutes.post(
 
 tenantsRoutes.post(
   "/loginByMFACode",
+  authRateLimiter,
   validate(loginByCodeMFASchema),
   asyncHandler(loginByCodeMFAHandler)
 );
@@ -141,7 +188,7 @@ tenantsRoutes.post(
  * @swagger
  * /tenants/login:
  *   post:
- *     summary: Authentifie un tenant  et retourne un token JWT
+ *     summary: Vérifie le mot de passe du tenant et envoie un code MFA par e-mail
  *     tags: [Tenants Authentication]
  *     requestBody:
  *       required: true
@@ -156,11 +203,7 @@ tenantsRoutes.post(
  *         description: Echec de la connexion du tenant
  */
 
-tenantsRoutes.post(
-  "/login",
-  validate(loginSchema),
-  asyncHandler(loginHandler)
-);
+tenantsRoutes.post("/login", authRateLimiter, validate(loginSchema), asyncHandler(loginHandler));
 
 /**
  * @swagger
@@ -183,8 +226,256 @@ tenantsRoutes.post(
 
 tenantsRoutes.post(
   "/google-register",
+  authRateLimiter,
   validate(googleLoginSchema),
   asyncHandler(googleRegister)
+);
+
+/**
+ * @swagger
+ * /tenants/refresh:
+ *   post:
+ *     summary: Échange un refresh token tenant contre une nouvelle paire de tokens (rotation)
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshToken'
+ *     responses:
+ *       200:
+ *         description: Succès
+ *       401:
+ *         description: Refresh token invalide, expiré ou déjà utilisé
+ */
+tenantsRoutes.post(
+  "/refresh",
+  authRateLimiter,
+  validate(refreshTokenSchema),
+  asyncHandler(refreshTokenHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/logout:
+ *   post:
+ *     summary: Révoque le refresh token tenant (ou toutes les sessions avec allDevices)
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Logout'
+ *     responses:
+ *       200:
+ *         description: Succès
+ *       401:
+ *         description: Refresh token invalide, expiré ou déjà utilisé
+ */
+tenantsRoutes.post("/logout", validate(logoutSchema), asyncHandler(logoutHandler));
+
+/**
+ * @swagger
+ * /tenants/forgotPassword:
+ *   post:
+ *     summary: Envoie un code de réinitialisation du mot de passe par e-mail
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerForgotPassword'
+ *     responses:
+ *       201:
+ *         description: Réponse identique que le compte existe ou non
+ *       400:
+ *         description: Code ou jeton invalide ou expiré
+ */
+tenantsRoutes.post(
+  "/forgotPassword",
+  authRateLimiter,
+  validate(forgotPasswordSchema),
+  asyncHandler(forgotPasswordHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/verifyResetCode:
+ *   post:
+ *     summary: Échange le code reçu par e-mail contre un jeton de réinitialisation
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerVerifyResetPasswordCode'
+ *     responses:
+ *       201:
+ *         description: Code valide, resetToken renvoyé
+ *       400:
+ *         description: Code ou jeton invalide ou expiré
+ */
+tenantsRoutes.post(
+  "/verifyResetCode",
+  authRateLimiter,
+  validate(verifyResetCodeSchema),
+  asyncHandler(verifyResetCodeHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/resetPassword:
+ *   put:
+ *     summary: Définit un nouveau mot de passe avec le jeton de réinitialisation et ferme toutes les sessions
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerResetPassword'
+ *     responses:
+ *       201:
+ *         description: Mot de passe réinitialisé
+ *       400:
+ *         description: Code ou jeton invalide ou expiré
+ */
+tenantsRoutes.put(
+  "/resetPassword",
+  authRateLimiter,
+  validate(resetPasswordSchema),
+  asyncHandler(resetPasswordHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/verifyEmail:
+ *   post:
+ *     summary: Vérifie l'adresse e-mail avec le code reçu à l'inscription et ouvre une session
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerVerifyEmail'
+ *     responses:
+ *       200:
+ *         description: E-mail vérifié, tokens renvoyés
+ *       400:
+ *         description: Code invalide ou expiré
+ */
+tenantsRoutes.post(
+  "/verifyEmail",
+  authRateLimiter,
+  validate(verifyEmailSchema),
+  asyncHandler(verifyEmailHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/resendEmailVerification:
+ *   post:
+ *     summary: Renvoie un code de vérification d'adresse e-mail
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerForgotPassword'
+ *     responses:
+ *       200:
+ *         description: Réponse identique que le compte existe ou non
+ *       400:
+ *         description: Code invalide ou expiré
+ */
+tenantsRoutes.post(
+  "/resendEmailVerification",
+  authRateLimiter,
+  validate(resendEmailVerificationSchema),
+  asyncHandler(resendEmailVerificationHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/app/{appId}/consumers/{consumerId}:
+ *   delete:
+ *     summary: Supprime un consumer d'une application du tenant et ses données
+ *     tags: [Tenants Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: appId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: consumerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Consumer supprimé
+ *       404:
+ *         description: Consumer introuvable
+ */
+tenantsRoutes.delete(
+  "/:tenantId/app/:appId/consumers/:consumerId",
+  tenantProtectedActionsAuthToken,
+  requireScope("consumer:delete"),
+  asyncHandler(deleteConsumerHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}:
+ *   delete:
+ *     summary: Supprime le compte tenant en cascade (applications, consumers, sessions)
+ *     tags: [Tenants Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/TenantDeleteAccount'
+ *     responses:
+ *       200:
+ *         description: Compte supprimé
+ *       401:
+ *         description: Suppression non confirmée
+ */
+tenantsRoutes.delete(
+  "/:tenantId",
+  authRateLimiter,
+  validate(deleteTenantAccountSchema),
+  tenantProtectedActionsAuthToken,
+  asyncHandler(deleteAccountHandler)
 );
 
 export default tenantsRoutes;

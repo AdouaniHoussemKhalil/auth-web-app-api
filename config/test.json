@@ -1,0 +1,11 @@
+{
+  "google": {
+    "clientId": "test-google-client-id"
+  },
+  "rateLimit": {
+    "enabled": false
+  },
+  "log": {
+    "level": "silent"
+  }
+}

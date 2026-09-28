@@ -2,8 +2,9 @@ import { Router } from "express";
 import { consumerActionsAuthToken } from "../../middleware/security/consumerActionsAuthToken";
 import validate from "../../middleware/validation/validateSchema";
 import { registerSchema } from "../../validation/users/registerSchema";
-import registerHandler from "../../handlers/commands/tenants/registerHandler";
 import { asyncHandler } from ".";
+import { mfaRequestScope, requireScope } from "../../middleware/security/requireScope";
+import { authRateLimiter } from "../../middleware/security/rateLimiter";
 import { loginSchema } from "../../validation/users/loginSchema";
 import loginUserHandler from "../../handlers/commands/consumers/loginUserHandler";
 import { forgotPasswordSchema } from "../../validation/users/forgotPasswordSchema";
@@ -27,6 +28,17 @@ import requestMFAHandler from "../../handlers/commands/consumers/requestMFAHandl
 import updateProfileHandler from "../../handlers/commands/consumers/updateProfileHandler";
 import getConsumerDetailsByIdQuery from "../../handlers/queries/consumers/getConsumerDetailsByIdQuery";
 import registerUserHandler from "../../handlers/commands/consumers/registerUserHandler";
+import refreshTokenHandler from "../../handlers/commands/consumers/refreshTokenHandler";
+import logoutHandler from "../../handlers/commands/consumers/logoutHandler";
+import { logoutSchema, refreshTokenSchema } from "../../validation/users/refreshTokenSchema";
+import verifyEmailHandler from "../../handlers/commands/consumers/verifyEmailHandler";
+import resendEmailVerificationHandler from "../../handlers/commands/consumers/resendEmailVerificationHandler";
+import {
+  resendEmailVerificationSchema,
+  verifyEmailSchema,
+} from "../../validation/users/emailVerificationSchema";
+import deleteAccountHandler from "../../handlers/commands/consumers/deleteAccountHandler";
+import { deleteConsumerAccountSchema } from "../../validation/users/deleteAccountSchema";
 
 const consumersRoutes = Router();
 
@@ -63,6 +75,7 @@ consumersRoutes.use(consumerActionsAuthToken);
  */
 consumersRoutes.post(
   "/auth/register",
+  authRateLimiter,
   validate(registerSchema),
   asyncHandler(registerUserHandler)
 );
@@ -98,6 +111,7 @@ consumersRoutes.post(
  */
 consumersRoutes.post(
   "/auth/login",
+  authRateLimiter,
   validate(loginSchema),
   asyncHandler(loginUserHandler)
 );
@@ -135,13 +149,14 @@ consumersRoutes.post(
 // Forgot password
 consumersRoutes.post(
   "/auth/forgotPassword",
+  authRateLimiter,
   validate(forgotPasswordSchema),
   asyncHandler(forgotPasswordHandler)
 );
 
 /**
  * @swagger
- * /auth/verifyResetPasswordCode:
+ * /consumers/auth/verifyResetCode:
  *   post:
  *     summary: Vérifie le code de réinitialisation de mot de passe
  *     tags: [Consumers Authentication]
@@ -172,13 +187,14 @@ consumersRoutes.post(
 // Verify reset code
 consumersRoutes.post(
   "/auth/verifyResetCode",
+  authRateLimiter,
   validate(verifyResetCodeSchema),
   asyncHandler(verifyResetCodeHandler)
 );
 
 /**
  * @swagger
- * /auth/resetPassword:
+ * /consumers/auth/resetPassword:
  *   put:
  *     summary: Réinitialise le mot de passe d'un utilisateur
  *     tags: [Consumers Authentication]
@@ -209,6 +225,7 @@ consumersRoutes.post(
 // Reset password
 consumersRoutes.put(
   "/auth/resetPassword",
+  authRateLimiter,
   validate(resetPasswordSchema),
   consumerActionsAuthToken,
   asyncHandler(resetPasswordHandler)
@@ -255,6 +272,7 @@ consumersRoutes.put(
   validate(updateProfileSchema),
   consumerActionsAuthToken,
   consumerProtectedActionsAuthToken,
+  requireScope("consumer:updateProfile"),
   asyncHandler(updateProfileHandler)
 );
 
@@ -298,6 +316,7 @@ consumersRoutes.put(
   "/auth/updatePassword/:id",
   validate(updatePasswordSchema),
   consumerProtectedActionsAuthToken,
+  requireScope("consumer:updatePassword"),
   asyncHandler(updatePasswordHandler)
 );
 
@@ -334,8 +353,10 @@ consumersRoutes.put(
 // Activate MFA
 consumersRoutes.post(
   "/auth/activateMFA",
+  authRateLimiter,
   validate(activatedMFASchema),
   consumerProtectedActionsAuthToken,
+  requireScope("consumer:activateMFA"),
   asyncHandler(activateMFAHandler)
 );
 
@@ -372,8 +393,10 @@ consumersRoutes.post(
 // Deactivate MFA
 consumersRoutes.post(
   "/auth/deactivateMFA",
+  authRateLimiter,
   validate(deactivateMFASchema),
   consumerProtectedActionsAuthToken,
+  requireScope("consumer:deactivateMFA"),
   asyncHandler(deactivateMFAHandler)
 );
 
@@ -410,6 +433,7 @@ consumersRoutes.post(
 // Login by MFA code
 consumersRoutes.post(
   "/auth/loginByMFA",
+  authRateLimiter,
   validate(loginByCodeMFASchema),
   asyncHandler(loginByCodeMFAHandler)
 );
@@ -447,11 +471,12 @@ consumersRoutes.post(
 // Request MFA
 consumersRoutes.post(
   "/auth/requestMFA",
+  authRateLimiter,
   validate(requestMFASchema),
   consumerProtectedActionsAuthToken,
+  requireScope(mfaRequestScope),
   asyncHandler(requestMFAHandler)
 );
-
 
 /**
  * @swagger
@@ -486,6 +511,177 @@ consumersRoutes.get(
   "/auth/me/:id",
   consumerProtectedActionsAuthToken,
   asyncHandler(getConsumerDetailsByIdQuery)
+);
+
+/**
+ * @swagger
+ * /consumers/auth/refresh:
+ *   post:
+ *     summary: Échange un refresh token contre une nouvelle paire de tokens (rotation)
+ *     tags: [Consumers Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: x-app-id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: header
+ *         name: x-app-secret
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshToken'
+ *     responses:
+ *       200:
+ *         description: Succès
+ *       401:
+ *         description: Refresh token invalide, expiré ou déjà utilisé
+ */
+consumersRoutes.post(
+  "/auth/refresh",
+  authRateLimiter,
+  validate(refreshTokenSchema),
+  asyncHandler(refreshTokenHandler)
+);
+
+/**
+ * @swagger
+ * /consumers/auth/logout:
+ *   post:
+ *     summary: Révoque le refresh token (ou toutes les sessions avec allDevices)
+ *     tags: [Consumers Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: x-app-id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: header
+ *         name: x-app-secret
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Logout'
+ *     responses:
+ *       200:
+ *         description: Succès
+ *       401:
+ *         description: Refresh token invalide, expiré ou déjà utilisé
+ */
+consumersRoutes.post("/auth/logout", validate(logoutSchema), asyncHandler(logoutHandler));
+
+/**
+ * @swagger
+ * /consumers/auth/verifyEmail:
+ *   post:
+ *     summary: Confirme l'adresse e-mail avec le code reçu à l'inscription
+ *     tags: [Consumers Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: x-app-id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: header
+ *         name: x-app-secret
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerVerifyEmail'
+ *     responses:
+ *       200:
+ *         description: Succès
+ *       400:
+ *         description: Code invalide ou expiré
+ */
+consumersRoutes.post(
+  "/auth/verifyEmail",
+  authRateLimiter,
+  validate(verifyEmailSchema),
+  asyncHandler(verifyEmailHandler)
+);
+
+/**
+ * @swagger
+ * /consumers/auth/resendEmailVerification:
+ *   post:
+ *     summary: Renvoie un code de vérification d'adresse e-mail
+ *     tags: [Consumers Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: x-app-id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: header
+ *         name: x-app-secret
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerForgotPassword'
+ *     responses:
+ *       200:
+ *         description: Succès
+ *       400:
+ *         description: Code invalide ou expiré
+ */
+consumersRoutes.post(
+  "/auth/resendEmailVerification",
+  authRateLimiter,
+  validate(resendEmailVerificationSchema),
+  asyncHandler(resendEmailVerificationHandler)
+);
+
+/**
+ * @swagger
+ * /consumers/auth/me/{id}:
+ *   delete:
+ *     summary: Supprime le compte du consumer connecté (confirmation par mot de passe)
+ *     tags: [Consumers Authentication]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerDeleteAccount'
+ *     responses:
+ *       200:
+ *         description: Compte et données associées supprimés
+ *       401:
+ *         description: Mot de passe incorrect
+ */
+consumersRoutes.delete(
+  "/auth/me/:id",
+  authRateLimiter,
+  validate(deleteConsumerAccountSchema),
+  consumerProtectedActionsAuthToken,
+  asyncHandler(deleteAccountHandler)
 );
 
 export default consumersRoutes;

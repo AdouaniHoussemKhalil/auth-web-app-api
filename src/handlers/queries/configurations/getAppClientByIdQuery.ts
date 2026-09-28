@@ -3,21 +3,11 @@ import AppClient from "../../../models/AppClient";
 import { Tenant } from "../../../models/Tenant";
 import { CustomError } from "../../../middleware/error/errorHandler";
 
-const getAppClientByIdQuery = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const getAppClientByIdQuery = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { tenantId, appId } = req.params;
 
-    if (!tenantId || !appId) {
-      return res
-        .status(400)
-        .json({ message: "tenantId and appId are required" });
-    }
-
-    const tenant = await Tenant.findOne({id: tenantId});
+    const tenant = await Tenant.findOne({ id: tenantId });
     if (!tenant) {
       const error = new Error("Tenant not exist") as CustomError;
       error.status = 401;
@@ -39,7 +29,6 @@ const getAppClientByIdQuery = async (
 
     res.status(200).json(app);
   } catch (error) {
-    console.error("Error fetching app client:", error);
     next(error);
   }
 };

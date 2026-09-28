@@ -1,26 +1,34 @@
 import { NextFunction, Response, Request } from "express";
 import { Consumer } from "../../../models/Consumer";
+import { paginate } from "../../../validation/paginationSchema";
 
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Consumers d'une application, paginés (actifs d'abord, puis les plus récents).
 const getConsumersQuery = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { appId } = req.params;
+    const { page, limit, email } = res.locals.query;
 
-    if (!appId) {
-      return res.status(400).json({ message: "appId is required" });
-    }
+    const filter = {
+      clientId: appId,
+      ...(email && { email: { $regex: escapeRegex(email), $options: "i" } }),
+    };
 
-    const consumers = await Consumer.find({ clientId: appId })
-      .sort({ isActive: -1, createdAt: -1 })
-      .lean();
+    const [consumers, total] = await Promise.all([
+      Consumer.find(filter)
+        .select("-password -secondaryUserAccess -oneTimeCodes")
+        .sort({ isActive: -1, createdOn: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Consumer.countDocuments(filter),
+    ]);
 
-    const sanitizedConsumers = consumers.map(({ password, ...rest }) => rest);
-
-    res.status(200).json(sanitizedConsumers);
+    res.status(200).json(paginate(consumers, total, { page, limit }));
   } catch (error) {
-    console.error("Error fetching consumers:", error);
     next(error);
   }
 };
 
 export default getConsumersQuery;
-  

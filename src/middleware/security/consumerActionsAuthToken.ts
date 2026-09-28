@@ -1,10 +1,11 @@
-// middleware/security/authenticateAppClient.ts
 import { Request, Response, NextFunction } from "express";
 import AppClient from "../../models/AppClient";
+import { safeEqual } from "../../services/security/oneTimeCode";
+import { createError } from "../error/errorHandler";
 
 export const consumerActionsAuthToken = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   try {
@@ -12,32 +13,22 @@ export const consumerActionsAuthToken = async (
     const appSecret = req.headers["x-app-secret"] as string;
 
     if (!appId || !appSecret) {
-      return res.status(400).json({
-        message: "Missing x-app-id or x-app-secret header",
-        isSuccess: false,
-      });
+      return next(
+        createError(400, "missingAppCredentials", "Missing x-app-id or x-app-secret header")
+      );
     }
 
     const appClient = await AppClient.findOne({ id: appId, isActive: true });
-    if (!appClient) {
-      return res.status(403).json({
-        message: "Invalid or inactive app client",
-        isSuccess: false,
-      });
-    }
 
-    if (appClient.secretKey !== appSecret) {
-      return res.status(403).json({
-        message: "Invalid app secret key",
-        isSuccess: false,
-      });
+    // Même message dans les deux cas pour ne pas révéler quels identifiants d'application existent.
+    if (!appClient || !safeEqual(appClient.secretKey, appSecret)) {
+      return next(createError(403, "invalidAppClient", "Invalid or inactive app client"));
     }
 
     (req as any).appClient = appClient;
 
     next();
-  } catch (err) {
-    console.error("App client authentication error:", err);
-    res.status(500).json({ message: "Server error", isSuccess: false });
+  } catch (error) {
+    next(error);
   }
 };

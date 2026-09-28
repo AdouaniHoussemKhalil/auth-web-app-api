@@ -2,16 +2,13 @@ import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../../middleware/error/errorHandler";
 import sendTemplateEmail from "../../../services/email/sendMails";
 import { templates } from "../../../services/email/models/Template";
-import { MFARequest } from "../../../models/MFARequest";
+import { MFARequestType } from "../../../models/enums/MFARequestType";
+import { verifyMFARequest } from "../../../services/mfa/mfaRequests";
 import { MFARequestStatus } from "../../../models/enums/MFARequestStatus";
 import { IAppClient } from "../../../models/AppClient";
 import { Consumer } from "../../../models/Consumer";
 
-const deactivateMFAHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+const deactivateMFAHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const appClient: IAppClient = (req as any).appClient;
     const { userId, deactivationId } = req.body;
@@ -22,7 +19,7 @@ const deactivateMFAHandler = async (
       throw error;
     }
 
-    const user = await Consumer.findById(userId);
+    const user = await Consumer.findOne({ id: userId, clientId: appClient.id });
 
     if (!user) {
       const error = new Error("User not found") as CustomError;
@@ -35,34 +32,13 @@ const deactivateMFAHandler = async (
       error.status = 400;
       throw error;
     }
-    
 
-    const userMFARequest = await MFARequest.findOne({
+    const userMFARequest = await verifyMFARequest(
+      appClient,
       userId,
-      verification: {
-        type: appClient.mfaSettings?.verificationMode,
-        code: appClient.mfaSettings?.verificationMode === "code" ? deactivationId : undefined,
-        link: appClient.mfaSettings?.verificationMode === "link" ? deactivationId : undefined,
-      },
-    });
-
-    if (!userMFARequest) {
-      const error = new Error(
-        "Invalid or expired deactivation token"
-      ) as CustomError;
-      error.status = 400;
-      throw error;
-    }
-
-    if (Date.now() > userMFARequest.expiresAt.getTime()) {
-      userMFARequest.status = MFARequestStatus.EXPIRED;
-      await userMFARequest.save();
-      const error = new Error(
-        "Invalid or expired deactivation token"
-      ) as CustomError;
-      error.status = 400;
-      throw error;
-    }
+      MFARequestType.DEACTIVATE,
+      deactivationId
+    );
 
     user.isMFAActivated = false;
     user.usedMFAMethod = undefined;
@@ -73,9 +49,8 @@ const deactivateMFAHandler = async (
     await userMFARequest.save();
     await user.save();
 
-
     if (
-      appClient.branding?.templates.find(t => t.id === templates.successfullyDeactivatedMFA.id)
+      appClient.branding?.templates.find((t) => t.id === templates.successfullyDeactivatedMFA.id)
         ?.isActive
     ) {
       await sendTemplateEmail(templates.successfullyDeactivatedMFA.id, {
@@ -91,9 +66,7 @@ const deactivateMFAHandler = async (
       });
     }
 
-    res
-      .status(200)
-      .json({ message: "MFA deactivated successfully", isSuccess: true });
+    res.status(200).json({ message: "MFA deactivated successfully", isSuccess: true });
   } catch (error) {
     next(error);
   }

@@ -6,12 +6,9 @@ export interface EmailBaseProps {
 }
 
 const renderBaseTemplate = (content: string, props: EmailBaseProps) => `
-  <div style="background-color: ${
-    props.primaryColor
-  }; padding: 20px; border-radius: 5px;">
+  <div style="background-color: ${props.primaryColor}; padding: 20px; border-radius: 5px;">
     <img src="${
-      props.logoUrl ||
-      "https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg"
+      props.logoUrl || "https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg"
     }" alt="Logo" style="width: 100px; margin-bottom: 20px;">
     <h3>Bonjour ${props.recipientFullName},</h3>
     ${content}
@@ -19,15 +16,27 @@ const renderBaseTemplate = (content: string, props: EmailBaseProps) => `
 `;
 
 export const templates = {
+  emailVerification: {
+    id: "emailVerification",
+    subject: "Vérification de votre adresse e-mail",
+    getHtml: ({ recipientFullName, primaryColor, logoUrl, variable }: EmailBaseProps) =>
+      renderBaseTemplate(
+        `
+        <p>Merci pour votre inscription.</p>
+        <p>Pour confirmer votre adresse e-mail, veuillez saisir le code ci-dessous :</p>
+        <p style="font-size: 18px; font-weight: bold;">
+          Code de vérification : <strong>${variable}</strong>
+        </p>
+        <p>Ce code expirera dans 24 heures.</p>
+      `,
+        { recipientFullName, primaryColor, logoUrl, variable }
+      ),
+  },
+
   forgotPassword: {
     id: "forgotPassword",
     subject: "Réinitialisation de votre mot de passe",
-    getHtml: ({
-      recipientFullName,
-      primaryColor,
-      logoUrl,
-      variable,
-    }: EmailBaseProps) =>
+    getHtml: ({ recipientFullName, primaryColor, logoUrl, variable }: EmailBaseProps) =>
       renderBaseTemplate(
         `
         <p>Vous avez demandé à réinitialiser votre mot de passe.</p>
@@ -66,12 +75,7 @@ export const templates = {
   activateMFA: {
     id: "activateMFA",
     subject: "Activation de la vérification en deux étapes",
-    getHtml: ({
-      recipientFullName,
-      primaryColor,
-      logoUrl,
-      variable,
-    }: EmailBaseProps) =>
+    getHtml: ({ recipientFullName, primaryColor, logoUrl, variable }: EmailBaseProps) =>
       renderBaseTemplate(
         `
         <p>Pour activer la vérification en deux étapes (MFA), veuillez saisir le code ci-dessous :</p>
@@ -86,12 +90,7 @@ export const templates = {
   deactivateMFA: {
     id: "deactivateMFA",
     subject: "Désactivation de la vérification en deux étapes",
-    getHtml: ({
-      recipientFullName,
-      primaryColor,
-      logoUrl,
-      variable,
-    }: EmailBaseProps) =>
+    getHtml: ({ recipientFullName, primaryColor, logoUrl, variable }: EmailBaseProps) =>
       renderBaseTemplate(
         `
         <p>Pour désactiver la vérification en deux étapes (MFA), veuillez saisir le code ci-dessous :</p>

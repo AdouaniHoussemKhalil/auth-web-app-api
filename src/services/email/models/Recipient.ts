@@ -1,4 +1,4 @@
 export type Recipient = {
-    fullName: string,
-    email: string
-}
+  fullName: string;
+  email: string;
+};

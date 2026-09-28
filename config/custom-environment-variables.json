@@ -1,0 +1,31 @@
+{
+  "server": {
+    "port": { "__name": "PORT", "__format": "number" },
+    "trustProxy": { "__name": "TRUST_PROXY", "__format": "json" }
+  },
+  "db": {
+    "uri": "MONGODB_URI"
+  },
+  "google": {
+    "clientId": "GOOGLE_CLIENT_ID"
+  },
+  "cors": {
+    "origins": { "__name": "CORS_ORIGINS", "__format": "json" }
+  },
+  "email": {
+    "provider": "EMAIL_PROVIDER",
+    "from": "EMAIL_FROM",
+    "brevo": {
+      "apiKey": "BREVO_API_KEY"
+    },
+    "smtp": {
+      "auth": {
+        "user": "SMTP_USER",
+        "pass": "SMTP_PASS"
+      }
+    }
+  },
+  "log": {
+    "level": "LOG_LEVEL"
+  }
+}

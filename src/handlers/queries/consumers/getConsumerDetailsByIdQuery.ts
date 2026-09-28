@@ -1,3 +1,4 @@
+import { createError } from "../../../middleware/error/errorHandler";
 import { Request, Response, NextFunction } from "express";
 import { Consumer } from "../../../models/Consumer";
 
@@ -5,14 +6,10 @@ const getConsumerDetailsByIdQuery = async (req: Request, res: Response, next: Ne
   try {
     const { id } = req.params;
 
-    if (!id) {
-      return res.status(400).json({ message: "Consumer ID is required" });
-    }
-
-    const consumer = await Consumer.findOne({id: id}).lean();
+    const consumer = await Consumer.findOne({ id, clientId: (req as any).appClient.id }).lean();
 
     if (!consumer) {
-      return res.status(404).json({ message: "Consumer not found" });
+      return next(createError(404, "consumerNotFound", "Consumer not found"));
     }
 
     const result = {
@@ -21,14 +18,13 @@ const getConsumerDetailsByIdQuery = async (req: Request, res: Response, next: Ne
       email: consumer.email,
       isActive: consumer.isActive,
       isMFAEnabled: consumer.isMFAActivated,
+      isEmailVerified: consumer.isEmailVerified,
       creationDate: consumer.createdOn,
-      id: consumer.id
-    }
+      id: consumer.id,
+    };
 
-    
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error fetching consumer:", error);
     next(error);
   }
 };

@@ -10,6 +10,7 @@ const TenantSchema = new Schema<ITenant>({
   secretKey: { type: String, required: true },
 });
 
+TenantSchema.index({ id: 1 }, { unique: true });
 TenantSchema.index({ email: 1 }, { unique: true });
 
 export const Tenant = mongoose.model<ITenant>("Tenant", TenantSchema, "tenants");

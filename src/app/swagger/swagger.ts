@@ -1,3 +1,4 @@
+import path from "path";
 import swaggerJsDoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import { Express } from "express";
@@ -37,10 +38,39 @@ const swaggerOptions = {
             lastName: { type: "string" },
             email: { type: "string" },
             password: { type: "string" },
-            confirmPassword: {type: "string"},
+            confirmPassword: { type: "string" },
             role: { type: "string", enum: Object.values(UserRole) },
           },
           required: ["email", "password", "firstName", "lastName", "role"],
+        },
+        RefreshToken: {
+          type: "object",
+          properties: { refreshToken: { type: "string" } },
+          required: ["refreshToken"],
+        },
+        Logout: {
+          type: "object",
+          properties: {
+            refreshToken: { type: "string" },
+            allDevices: { type: "boolean", description: "Révoque toutes les sessions" },
+          },
+          required: ["refreshToken"],
+        },
+        ConsumerVerifyEmail: {
+          type: "object",
+          properties: { email: { type: "string" }, code: { type: "string" } },
+          required: ["email", "code"],
+        },
+        ConsumerDeleteAccount: {
+          type: "object",
+          properties: { password: { type: "string" } },
+          required: ["password"],
+        },
+        TenantDeleteAccount: {
+          type: "object",
+          description:
+            "password pour un compte classique, confirmEmail pour un compte Google sans mot de passe",
+          properties: { password: { type: "string" }, confirmEmail: { type: "string" } },
         },
         ConsumerLogin: {
           type: "object",
@@ -71,9 +101,12 @@ const swaggerOptions = {
             email: { type: "string" },
             password: { type: "string" },
             confirmPassword: { type: "string" },
-            currentPassword: { type: "string" },
+            resetToken: {
+              type: "string",
+              description: "Jeton renvoyé par /consumers/auth/verifyResetCode",
+            },
           },
-          required: ["email", "password", "confirmPassword", "currentPassword"],
+          required: ["email", "resetToken", "password", "confirmPassword"],
         },
         ConsumerUpdateProfile: {
           type: "object",
@@ -92,12 +125,7 @@ const swaggerOptions = {
             password: { type: "string" },
             confirmPassword: { type: "string" },
           },
-          required: [
-            "userId",
-            "currentPassword",
-            "password",
-            "confirmPassword",
-          ],
+          required: ["userId", "currentPassword", "password", "confirmPassword"],
         },
         ConsumerActivateMFA: {
           type: "object",
@@ -126,7 +154,6 @@ const swaggerOptions = {
         ConsumerRequestMFA: {
           type: "object",
           properties: {
-            userId: { type: "string" },
             email: { type: "string" },
             requestType: {
               type: "string",
@@ -145,14 +172,7 @@ const swaggerOptions = {
             confirmPassword: { type: "string" },
             role: { type: "string", enum: Object.values(UserRole) },
           },
-          required: [
-            "firstName",
-            "lastName",
-            "email",
-            "password",
-            "confirmPassword",
-            "role",
-          ],
+          required: ["firstName", "lastName", "email", "password", "confirmPassword", "role"],
         },
         TenantLogin: {
           type: "object",
@@ -183,24 +203,19 @@ const swaggerOptions = {
             tenantId: { type: "string" },
             name: { type: "string" },
             tokenExpiresIn: { type: "string" },
+            refreshTokenExpiresIn: { type: "string", example: "7d" },
             resetTokenExpiresIn: { type: "string" },
+            requireEmailVerification: { type: "boolean", default: false },
+            mfaVerificationMode: { type: "string", enum: ["code", "link"] },
             mfaExpiresIn: { type: "string" },
             redirectUrl: { type: "string" },
-            resetPasswordUrl: {type: "string"},
+            resetPasswordUrl: { type: "string" },
             logoutUrl: { type: "string" },
             supportEmail: { type: "string" },
             logoUrl: { type: "string" },
             primaryColor: { type: "string" },
           },
-          required: [
-            "tenantId",
-            "name",
-            "tokenExpiresIn",
-            "resetTokenExpiresIn",
-            "mfaExpiresIn",
-            "redirectUrl",
-            "supportEmail",
-          ],
+          required: ["tenantId", "name", "redirectUrl", "resetPasswordUrl", "supportEmail"],
         },
         ClientAppUpdate: {
           type: "object",
@@ -213,10 +228,11 @@ const swaggerOptions = {
     },
     security: [{ bearerAuth: [] }, { AppAuth: [] }, { AppSecret: [] }],
   },
-  apis: ["**/routes/*.ts"],
+  // Glob en slashs : sous Windows, path.join produit des antislashs non reconnus par le glob.
+  apis: [path.join(__dirname, "../routes/*.{ts,js}").split(path.sep).join("/")],
 };
 
-const specs = swaggerJsDoc(swaggerOptions);
+export const specs = swaggerJsDoc(swaggerOptions) as { paths: Record<string, unknown> };
 
 export const setupSwagger = (app: Express) => {
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));

@@ -1,0 +1,22 @@
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  api:
+    build: .
+    depends_on:
+      - mongo
+    ports:
+      - "8080:8080"
+    # Variables lues par config/custom-environment-variables.json (voir README, « Déploiement »).
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/auth
+      # En local, les e-mails et leurs codes s'affichent dans les logs du conteneur.
+      EMAIL_PROVIDER: console
+
+volumes:
+  mongo-data:

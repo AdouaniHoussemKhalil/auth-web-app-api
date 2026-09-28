@@ -1,77 +1,40 @@
 import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../../middleware/error/errorHandler";
 import { Consumer } from "../../../models/Consumer";
-import { compare } from "../../../services/hashing/hash";
+import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
+import { consumeOneTimeCode, setOneTimeCode } from "../../../services/security/oneTimeCode";
+import { randomToken } from "../../../utils/random";
 
+const RESET_TOKEN_EXPIRATION_MS = 15 * 60 * 1000;
 
-const verifyResetCodeHandler = async (
-  request: Request,
-  response: Response,
-  next: NextFunction
-) => {
+const verifyResetCodeHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
-
     const { email, resetCode } = request.body;
-    
-    if (!email || !resetCode) {
-      const error = new Error("An error occurred") as CustomError;
-      error.status = 400;
-      throw error;
-    }
 
-    const user = await Consumer.findOne({ email });
+    const user = await Consumer.findOne({ email, clientId: (request as any).appClient.id });
     if (!user) {
-      const error = new Error("User not exist") as CustomError;
-      error.status = 401;
-      error.code = "userNotExist";
-      throw error;
-    }
-
-    if (!user.secondaryUserAccess || !user.secondaryUserAccess.expires) {
-      const error = new Error(
-        "An error occurred with reset code"
-      ) as CustomError;
+      const error = new Error("Invalid code") as CustomError;
       error.status = 400;
-      error.code = "errorOcurredWithResetCode";
+      error.code = "invalidCode";
       throw error;
     }
 
-    const { code, expires } = user.secondaryUserAccess;
+    await consumeOneTimeCode(user, SecondaryUserAccessMethodType.ForgotPassword, resetCode);
 
-    if (!(expires instanceof Date)) {
-      const error = new Error("invalid expiration date") as CustomError;
-      error.status = 400;
-      error.code = "invalidExpirationDate";
-      throw error;
-    }
-
-    if (Date.now() > expires.getTime()) {
-      user.secondaryUserAccess = undefined;
-      await user.save();
-      const error = new Error("Expired reset code") as CustomError;
-      error.status = 400;
-      error.code = "expiredResetCode";
-      throw error;
-    }
-
-    const isResetCodeValid = await compare(
-      resetCode,
-      code ?? ""
+    // Le code e-mail est échangé contre un jeton à usage unique exigé par /resetPassword.
+    const resetToken = randomToken();
+    await setOneTimeCode(
+      user,
+      SecondaryUserAccessMethodType.ResetPassword,
+      resetToken,
+      RESET_TOKEN_EXPIRATION_MS
     );
-    if (!isResetCodeValid) {
-      const error = new Error("Invalid reset code") as CustomError;
-      error.status = 400;
-      error.code = "invalidResetCode";
-      throw error;
-    }
-
-    user.secondaryUserAccess = undefined;
     await user.save();
 
     return response.status(201).json({
       message: "validResetCode",
       isSuccess: true,
-      userId: user.id
+      resetToken,
     });
   } catch (error) {
     next(error);

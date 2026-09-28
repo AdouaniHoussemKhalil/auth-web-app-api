@@ -7,13 +7,10 @@ import { templates } from "../../../services/email/models/Template";
 import { Recipient } from "../../../services/email/models/Recipient";
 import sendTemplateEmail from "../../../services/email/sendMails";
 import { Consumer } from "../../../models/Consumer";
-import { compare, hash } from "../../../services/hashing/hash";
+import { compare } from "../../../services/hashing/hash";
+import { setOneTimeCode } from "../../../services/security/oneTimeCode";
 
-const loginUserHandler = async (
-  request: Request,
-  response: Response,
-  next: NextFunction
-) => {
+const loginUserHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
     const { email, password } = request.body;
     if (!email || !password) {
@@ -22,7 +19,9 @@ const loginUserHandler = async (
       throw error;
     }
 
-    const user = await Consumer.findOne({ email });
+    const appClient = (request as any).appClient;
+
+    const user = await Consumer.findOne({ email, clientId: appClient.id });
     if (!user) {
       const error = new Error("Invalid email or password") as CustomError;
       error.status = 401;
@@ -39,6 +38,41 @@ const loginUserHandler = async (
       throw error;
     }
 
+    if (appClient.requireEmailVerification && !user.isEmailVerified) {
+      const error = new Error("Email address is not verified") as CustomError;
+      error.status = 403;
+      error.code = "emailNotVerified";
+      throw error;
+    }
+
+    if (user.isMFAActivated) {
+      const code = randomSixDigitCode();
+      const expiresInMs = (appClient.mfaSettings?.expiryMinutes ?? 15) * 60 * 1000;
+      await setOneTimeCode(user, SecondaryUserAccessMethodType.MFA, code, expiresInMs);
+
+      const recipient: Recipient = {
+        email: user.email,
+        fullName: `${user.firstName} ${user.lastName}`,
+      };
+
+      await user.save();
+
+      await sendTemplateEmail(templates.loginByCodeMFA.id, {
+        recipient,
+        appClientBranding: {
+          appName: appClient.branding.appName,
+          primaryColor: appClient.branding.primaryColor,
+          logoUrl: appClient.branding.logoUrl,
+        },
+        variable: code,
+      });
+      return response.status(200).json({
+        MFARequired: true,
+        message: "MFA is required, Please check your email for the verification code.",
+        isSuccess: true,
+      });
+    }
+
     const returnedUser: any = {
       id: user.id,
       firstName: user.firstName,
@@ -48,45 +82,13 @@ const loginUserHandler = async (
       scopes: user.scopes,
     };
 
-    const appClient = (request as any).appClient;
     const { access_token, refresh_token } = await generateConsumerToken(
       { jwtPayload: returnedUser },
-      appClient.id
+      appClient.id,
+      user.id
     );
 
-    if (user.isMFAActivated) {
-      const code = randomSixDigitCode();
-      const expiresInMs = appClient.mfaSettings?.expiryMinutes * 60 * 1000;
-      user.secondaryUserAccess = {
-        code: await hash(code),
-        expires: new Date(Date.now() + expiresInMs),
-        type: SecondaryUserAccessMethodType.MFA,
-      };
-
-      const recipient: Recipient = {
-        email: user.email,
-        fullName: `${user.firstName} ${user.lastName}`,
-      };
-
-      await user.save();
-
-      sendTemplateEmail(templates.loginByCodeMFA.id, {
-        recipient,
-        appClientBranding: {
-          appName: appClient.branding.appName,
-          primaryColor: appClient.branding.primaryColor,
-          logoUrl: appClient.branding.logoUrl,
-        },
-        variable: code,
-      }).catch(err => console.error("Email error: ", err));
-      response.status(201).json({
-        MFARequired: true,
-        message:
-          "MFA is required, Please check your email for the verification code.",
-      });
-    }
-
-    response.status(200).json({
+    return response.status(200).json({
       access_token,
       refresh_token,
       user: returnedUser,
