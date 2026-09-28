@@ -1,6 +1,8 @@
 import { Router } from "express";
 import validate from "../../middleware/validation/validateSchema";
 import { asyncHandler } from ".";
+import validateQuery from "../../middleware/validation/validateQuery";
+import { paginationSchema } from "../../validation/paginationSchema";
 import { requireScope } from "../../middleware/security/requireScope";
 import { createClientAppSchema } from "../../validation/configurations/createClientAppSchema";
 import createClientAppHandler from "../../handlers/commands/configurations/createClientAppHandler";
@@ -102,6 +104,19 @@ configurationsRoutes.put(
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
  *     responses:
  *       200:
  *         description: Applications clientes récupérées avec succès
@@ -112,6 +127,7 @@ configurationsRoutes.put(
 configurationsRoutes.get(
   "/apps/:tenantId",
   tenantProtectedActionsAuthToken,
+  validateQuery(paginationSchema),
   requireScope("app:read"),
   asyncHandler(getAppClientsQuery)
 );

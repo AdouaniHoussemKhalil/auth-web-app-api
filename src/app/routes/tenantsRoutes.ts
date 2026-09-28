@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { tenantProtectedActionsAuthToken } from "../../middleware/security/tenantProtectedActionsAuthToken";
 import { asyncHandler } from ".";
+import validateQuery from "../../middleware/validation/validateQuery";
+import { consumersListSchema } from "../../validation/paginationSchema";
 import { requireScope } from "../../middleware/security/requireScope";
 import { authRateLimiter } from "../../middleware/security/rateLimiter";
 import getConsumersQuery from "../../handlers/queries/tenants/getConsumersQuery";
@@ -54,6 +56,24 @@ const tenantsRoutes = Router();
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *       - in: query
+ *         name: email
+ *         description: Recherche partielle, insensible à la casse
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Liste des consommateurs récupérée avec succès
@@ -63,6 +83,7 @@ const tenantsRoutes = Router();
 tenantsRoutes.get(
   "/:tenantId/app/:appId/consumers",
   tenantProtectedActionsAuthToken,
+  validateQuery(consumersListSchema),
   requireScope("consumer:read"),
   asyncHandler(getConsumersQuery)
 );
