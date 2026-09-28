@@ -5,7 +5,7 @@ describe("Documentation Swagger", () => {
     const paths = Object.keys(specs.paths);
 
     expect(paths.filter((path) => path.startsWith("/consumers/"))).toHaveLength(16);
-    expect(paths.filter((path) => path.startsWith("/tenants/"))).toHaveLength(8);
+    expect(paths.filter((path) => path.startsWith("/tenants/"))).toHaveLength(11);
     expect(paths.filter((path) => path.startsWith("/config/"))).toHaveLength(5);
   });
 });
