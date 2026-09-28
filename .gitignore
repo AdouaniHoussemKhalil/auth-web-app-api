@@ -135,3 +135,6 @@ dist
 
 #models
 *.nlp
+
+# Local config (secrets)
+config/local*.json
