@@ -88,6 +88,9 @@ Conventions :
 - Codes à usage unique : toujours passer par `src/services/security/oneTimeCode.ts` (`setOneTimeCode` / `consumeOneTimeCode`),
   qui gère hachage, expiration et limite de tentatives. Un seul code en attente par utilisateur (`secondaryUserAccess`).
 - Aléatoire : `src/utils/random.ts` (basé sur `crypto`) ; jamais `Math.random()`.
+- Logs : `logger` de `src/utils/logger.ts` (pino), jamais `console.*`. Passer les erreurs sous la clé `err`
+  (`logger.error({ err }, "message")`). Pas besoin de journaliser avant `next(error)` : `errorHandler` journalise les 500
+  et `pino-http` chaque requête.
 - Tokens : `generateConsumerToken` / `generateTenantToken` prennent l'identifiant du sujet pour enregistrer le refresh token ;
   le contenu du JWT est construit par `src/services/token/payloads.ts`. Ne jamais mettre de secret dans un payload JWT.
 - Ne pas révéler l'existence d'un compte : mêmes réponses pour un e-mail inconnu (`forgotPassword`, `resendEmailVerification`,

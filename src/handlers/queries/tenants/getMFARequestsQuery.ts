@@ -10,7 +10,6 @@ const getMFARequestsQuery = async (req: Request, res: Response, next: NextFuncti
     });
     res.status(200).json(mfaRequests);
   } catch (error) {
-    console.error("Error fetching MFA requests:", error);
     next(error);
   }
 };

@@ -1,15 +1,16 @@
+import { logger } from "../utils/logger";
 import mongoose, { MongooseError } from "mongoose";
 
 mongoose.connection.on("connected", () => {
-  console.log("Mongoose connected to DB");
+  logger.info("Mongoose connected to DB");
 });
 
 mongoose.connection.on("error", (error: MongooseError) => {
-  console.error(`Mongoose connection error: ${error}`);
+  logger.error({ err: error }, "Mongoose connection error");
 });
 
 mongoose.connection.on("disconnected", () => {
-  console.log("Mongoose disconnected");
+  logger.warn("Mongoose disconnected");
 });
 
 export const connectDB = async (uri: string) => {

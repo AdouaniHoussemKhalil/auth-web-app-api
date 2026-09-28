@@ -4,5 +4,8 @@
   },
   "rateLimit": {
     "enabled": false
+  },
+  "log": {
+    "level": "silent"
   }
 }

@@ -37,7 +37,6 @@ const updateClientAppHandler = async (req: Request, res: Response, next: NextFun
       data: { appId: app.id },
     });
   } catch (error) {
-    console.error("Error updating app client:", error);
     next(error);
   }
 };

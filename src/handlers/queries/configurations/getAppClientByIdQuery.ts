@@ -29,7 +29,6 @@ const getAppClientByIdQuery = async (req: Request, res: Response, next: NextFunc
 
     res.status(200).json(app);
   } catch (error) {
-    console.error("Error fetching app client:", error);
     next(error);
   }
 };

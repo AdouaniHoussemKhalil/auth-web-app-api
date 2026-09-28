@@ -25,7 +25,6 @@ const getConsumerDetailsByIdQuery = async (req: Request, res: Response, next: Ne
 
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error fetching consumer:", error);
     next(error);
   }
 };

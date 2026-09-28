@@ -20,7 +20,6 @@ const getConsumerByIdQuery = async (req: Request, res: Response, next: NextFunct
 
     res.status(200).json(sanitizedConsumer);
   } catch (error) {
-    console.error("Error fetching consumer:", error);
     next(error);
   }
 };

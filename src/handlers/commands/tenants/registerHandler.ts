@@ -77,7 +77,6 @@ const registerHandler = async (req: Request, res: Response, next: NextFunction) 
       isSuccess: true,
     });
   } catch (error) {
-    console.error("Error registering tenant:", error);
     next(error);
   }
 };

@@ -22,7 +22,6 @@ const getAppClientsQuery = async (req: Request, res: Response, next: NextFunctio
 
     res.status(200).json(apps);
   } catch (error) {
-    console.error("Error fetching consumers:", error);
     next(error);
   }
 };

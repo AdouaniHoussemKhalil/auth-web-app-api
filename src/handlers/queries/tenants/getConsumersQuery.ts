@@ -15,7 +15,6 @@ const getConsumersQuery = async (req: Request, res: Response, next: NextFunction
 
     res.status(200).json(sanitizedConsumers);
   } catch (error) {
-    console.error("Error fetching consumers:", error);
     next(error);
   }
 };
