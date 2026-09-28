@@ -13,6 +13,9 @@ import { googleRegister } from "../../handlers/commands/tenants/googleRegisterHa
 import { googleLoginSchema } from "../../validation/users/googleLoginSchema";
 import { loginSchema } from "../../validation/users/loginSchema";
 import loginByCodeMFAHandler from "../../handlers/commands/tenants/loginByMFACodeHandler";
+import refreshTokenHandler from "../../handlers/commands/tenants/refreshTokenHandler";
+import logoutHandler from "../../handlers/commands/tenants/logoutHandler";
+import { logoutSchema, refreshTokenSchema } from "../../validation/users/refreshTokenSchema";
 
 const tenantsRoutes = Router();
 
@@ -188,5 +191,50 @@ tenantsRoutes.post(
   validate(googleLoginSchema),
   asyncHandler(googleRegister)
 );
+
+/**
+ * @swagger
+ * /tenants/refresh:
+ *   post:
+ *     summary: Échange un refresh token tenant contre une nouvelle paire de tokens (rotation)
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshToken'
+ *     responses:
+ *       200:
+ *         description: Succès
+ *       401:
+ *         description: Refresh token invalide, expiré ou déjà utilisé
+ */
+tenantsRoutes.post(
+  "/refresh",
+  authRateLimiter,
+  validate(refreshTokenSchema),
+  asyncHandler(refreshTokenHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/logout:
+ *   post:
+ *     summary: Révoque le refresh token tenant (ou toutes les sessions avec allDevices)
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Logout'
+ *     responses:
+ *       200:
+ *         description: Succès
+ *       401:
+ *         description: Refresh token invalide, expiré ou déjà utilisé
+ */
+tenantsRoutes.post("/logout", validate(logoutSchema), asyncHandler(logoutHandler));
 
 export default tenantsRoutes;

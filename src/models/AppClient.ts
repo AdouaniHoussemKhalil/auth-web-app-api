@@ -35,7 +35,9 @@ export interface IAppClient extends Document {
   secretKey: string;
   apiKey: string;
   tokenExpiresIn?: string;
+  refreshTokenExpiresIn?: string;
   resetTokenExpiresIn?: string;
+  requireEmailVerification: boolean;
   mfaSettings?: MFASettings;
   isActive: boolean;
   allowedOrigins?: string[];
@@ -61,8 +63,10 @@ const AppClientSchema = new Schema<IAppClient>({
   name: { type: String, required: true },
   secretKey: { type: String, required: true },
   apiKey: { type: String, required: true },
-  tokenExpiresIn: { type: String, default: "7d" },
+  tokenExpiresIn: { type: String, default: "1h" },
+  refreshTokenExpiresIn: { type: String, default: "7d" },
   resetTokenExpiresIn: { type: String, default: "15m" },
+  requireEmailVerification: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
   allowedOrigins: { type: [String], default: [] },
   mfaSettings: { type: MFASettingsSchema, default: {} },

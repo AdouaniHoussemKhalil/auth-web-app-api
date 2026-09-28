@@ -65,7 +65,8 @@ const registerHandler = async (req: Request, res: Response, next: NextFunction) 
 
     const { access_token, refresh_token } = await generateTenantToken(
       { jwtPayload: result },
-      newTenant.secretKey
+      newTenant.secretKey,
+      newTenant.id
     );
 
     res.status(201).json({

@@ -31,7 +31,8 @@ const loginByCodeMFAHandler = async (request: Request, response: Response, next:
 
     const { access_token, refresh_token } = await generateConsumerToken(
       { jwtPayload: returnedUser },
-      appId
+      appId,
+      user.id
     );
 
     response.status(200).json({
