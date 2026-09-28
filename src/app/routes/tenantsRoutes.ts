@@ -16,6 +16,12 @@ import loginByCodeMFAHandler from "../../handlers/commands/tenants/loginByMFACod
 import refreshTokenHandler from "../../handlers/commands/tenants/refreshTokenHandler";
 import logoutHandler from "../../handlers/commands/tenants/logoutHandler";
 import { logoutSchema, refreshTokenSchema } from "../../validation/users/refreshTokenSchema";
+import forgotPasswordHandler from "../../handlers/commands/tenants/forgotPasswordHandler";
+import verifyResetCodeHandler from "../../handlers/commands/tenants/verifyResetCodeHandler";
+import resetPasswordHandler from "../../handlers/commands/tenants/resetPasswordHandler";
+import { forgotPasswordSchema } from "../../validation/users/forgotPasswordSchema";
+import { verifyResetCodeSchema } from "../../validation/users/verifyResetCodeSchema";
+import { resetPasswordSchema } from "../../validation/users/resetPasswordSchema";
 
 const tenantsRoutes = Router();
 
@@ -236,5 +242,80 @@ tenantsRoutes.post(
  *         description: Refresh token invalide, expiré ou déjà utilisé
  */
 tenantsRoutes.post("/logout", validate(logoutSchema), asyncHandler(logoutHandler));
+
+/**
+ * @swagger
+ * /tenants/forgotPassword:
+ *   post:
+ *     summary: Envoie un code de réinitialisation du mot de passe par e-mail
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerForgotPassword'
+ *     responses:
+ *       201:
+ *         description: Réponse identique que le compte existe ou non
+ *       400:
+ *         description: Code ou jeton invalide ou expiré
+ */
+tenantsRoutes.post(
+  "/forgotPassword",
+  authRateLimiter,
+  validate(forgotPasswordSchema),
+  asyncHandler(forgotPasswordHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/verifyResetCode:
+ *   post:
+ *     summary: Échange le code reçu par e-mail contre un jeton de réinitialisation
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerVerifyResetPasswordCode'
+ *     responses:
+ *       201:
+ *         description: Code valide, resetToken renvoyé
+ *       400:
+ *         description: Code ou jeton invalide ou expiré
+ */
+tenantsRoutes.post(
+  "/verifyResetCode",
+  authRateLimiter,
+  validate(verifyResetCodeSchema),
+  asyncHandler(verifyResetCodeHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/resetPassword:
+ *   put:
+ *     summary: Définit un nouveau mot de passe avec le jeton de réinitialisation et ferme toutes les sessions
+ *     tags: [Tenants Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerResetPassword'
+ *     responses:
+ *       201:
+ *         description: Mot de passe réinitialisé
+ *       400:
+ *         description: Code ou jeton invalide ou expiré
+ */
+tenantsRoutes.put(
+  "/resetPassword",
+  authRateLimiter,
+  validate(resetPasswordSchema),
+  asyncHandler(resetPasswordHandler)
+);
 
 export default tenantsRoutes;

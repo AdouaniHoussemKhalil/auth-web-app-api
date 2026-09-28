@@ -4,6 +4,7 @@ import { Consumer } from "../../../models/Consumer";
 import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
 import { hash } from "../../../services/hashing/hash";
 import { consumeOneTimeCode } from "../../../services/security/oneTimeCode";
+import { revokeAllRefreshTokens } from "../../../services/token/tokenService";
 
 const resetPasswordHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
@@ -29,6 +30,9 @@ const resetPasswordHandler = async (request: Request, response: Response, next: 
 
     user.password = await hash(password);
     await user.save();
+
+    // Le mot de passe a pu fuiter : toutes les sessions existantes sont fermées.
+    await revokeAllRefreshTokens("consumer", user.id, user.clientId);
 
     return response.status(201).json({
       message: "update password successfuly",
