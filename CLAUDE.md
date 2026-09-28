@@ -27,7 +27,7 @@ npm run build           # compile vers dist/ (tsconfig.build.json)
 Swagger : `http://localhost:8080/api-docs`.
 
 **Avant chaque commit** : `npm run typecheck && npm run lint && npm test`. La CI (`.github/workflows/ci.yml`) exécute
-les mêmes étapes plus `build` sur chaque PR vers `develop` et `main`.
+les mêmes étapes plus `build` sur chaque PR vers `develop`.
 
 ## Tests
 
@@ -92,6 +92,9 @@ Conventions :
   codes invalides).
 - E-mails : ajouter un template dans `src/services/email/models/Template.ts` (textes en français) et l'envoyer avec
   `sendTemplateEmail(templates.x.id, { recipient, appClientBranding, variable })`.
+  Le transport est choisi par `src/services/email/emailSender.ts` (`email.provider` : `smtp` ou `console`) ; un nouveau
+  provider (HTTP, par exemple Brevo) s'ajoute dans `providers.ts`. En local, `"email": { "provider": "console" }` affiche
+  les codes dans le terminal.
 - Commentaires Swagger, commentaires de code et textes des e-mails en français ; code, messages d'erreur API et `error.code` en anglais.
 
 ## Pièges connus
@@ -107,6 +110,7 @@ Conventions :
 
 ## Workflow Git
 
-- Branches `feature/<sujet>` ou `fix/<sujet>` créées depuis `develop`. Les PR ciblent `develop`, jamais directement `main` ou `master`.
+- Branches `feature/<sujet>` ou `fix/<sujet>` créées depuis `develop`. Les PR ciblent `develop`, jamais directement `master`.
+- `master` est la branche de production (fusion de `develop` lors d'une release) ; `main` est une branche historique inutilisée.
 - Commits au format Conventional Commits, description en français (`fix(consumers): ...`), avec `Refs #N` / `Closes #N`.
 - Ne jamais committer `config/local.json`, `.env*`, `node_modules/` ni `dist/`.

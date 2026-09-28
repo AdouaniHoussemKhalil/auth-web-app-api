@@ -65,7 +65,8 @@ d'une application invalide toutes les sessions de ses consumers.
 **Transverse**
 
 - Validation des corps de requête avec **Zod**.
-- E-mails HTML (en français) via **Nodemailer / SMTP**, personnalisés avec le nom, la couleur et le logo de l'application.
+- E-mails HTML (en français) personnalisés avec le nom, la couleur et le logo de l'application, envoyés par SMTP
+  (Nodemailer) ou affichés dans le terminal en développement (provider `console`).
 - Documentation **Swagger** générée depuis les commentaires JSDoc des routes.
 
 ## Stack technique
@@ -91,7 +92,8 @@ Lance MongoDB et l'API sur `http://localhost:8080`. Pour l'envoi d'e-mails et la
 
 ### En local
 
-Prérequis : Node.js 20+, une base MongoDB (locale ou Atlas), un compte SMTP (Gmail avec mot de passe d'application, par exemple).
+Prérequis : Node.js 20+ et une base MongoDB (locale ou Atlas). Un compte SMTP est facultatif : sans identifiants SMTP,
+les e-mails (et leurs codes) s'affichent dans le terminal.
 
 ```bash
 npm install
@@ -114,7 +116,7 @@ npm run dev
 | `npm run format`             | Formatage Prettier                                             |
 | `npm test` / `test:coverage` | Tests d'intégration (MongoDB en mémoire, e-mails simulés)      |
 
-La CI GitHub Actions exécute `typecheck`, `lint`, `test` et `build` sur chaque PR vers `develop` et `main`.
+La CI GitHub Actions exécute `typecheck`, `lint`, `test` et `build` sur chaque PR vers `develop`.
 
 ## Configuration
 
@@ -134,31 +136,49 @@ Exemple de `config/local.json` :
 {
   "db": { "uri": "mongodb://localhost:27017/auth" },
   "google": { "clientId": "<client-id>.apps.googleusercontent.com" },
-  "email": {
-    "smtp": {
-      "host": "smtp.gmail.com",
-      "port": 465,
-      "secure": true,
-      "auth": { "user": "<adresse>", "pass": "<mot de passe d'application>" }
-    }
-  },
+  "email": { "provider": "console" },
   "cors": { "origins": ["http://localhost:3000"] }
 }
 ```
 
-| Clé                                    | Défaut              | Description                                                                                                            |
-| -------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `server.port`                          | `8080`              | Port HTTP.                                                                                                             |
-| `server.trustProxy`                    | —                   | Valeur Express `trust proxy`. À définir derrière un reverse proxy pour que la limitation par IP voie la vraie adresse. |
-| `db.uri`                               | —                   | URI de connexion MongoDB.                                                                                              |
-| `google.clientId`                      | —                   | Client ID OAuth Google, pour vérifier les ID tokens de `/tenants/google-register`.                                     |
-| `aud`                                  | `tenant2025`        | Audience des JWT tenants.                                                                                              |
-| `tenant.scopes` / `consumer.scopes`    | voir `default.json` | Scopes attribués à l'inscription.                                                                                      |
-| `email.smtp.*`                         | —                   | Paramètres du transport SMTP Nodemailer.                                                                               |
-| `cors.origins`                         | `"*"`               | Origines autorisées (tableau). **À restreindre en production.**                                                        |
-| `rateLimit.enabled`                    | `true`              | Active la limitation de débit sur les routes sensibles.                                                                |
-| `rateLimit.windowMs` / `rateLimit.max` | `900000` / `20`     | Fenêtre (ms) et nombre maximal de requêtes par application et par IP.                                                  |
-| `email.info.from`, `front.url`         | —                   | Présents dans la config mais pas encore utilisés par le code.                                                          |
+| Clé                                    | Défaut                     | Description                                                                                                            |
+| -------------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `server.port`                          | `8080`                     | Port HTTP.                                                                                                             |
+| `server.trustProxy`                    | —                          | Valeur Express `trust proxy`. À définir derrière un reverse proxy pour que la limitation par IP voie la vraie adresse. |
+| `db.uri`                               | —                          | URI de connexion MongoDB.                                                                                              |
+| `google.clientId`                      | —                          | Client ID OAuth Google, pour vérifier les ID tokens de `/tenants/google-register`.                                     |
+| `aud`                                  | `tenant2025`               | Audience des JWT tenants.                                                                                              |
+| `tenant.scopes` / `consumer.scopes`    | voir `default.json`        | Scopes attribués à l'inscription.                                                                                      |
+| `email.provider`                       | `smtp`                     | `smtp` ou `console` (affiche les e-mails et leurs codes dans le terminal). Voir [E-mails](#e-mails).                   |
+| `email.from`                           | utilisateur SMTP           | Adresse d'expédition (avec Gmail, doit être l'adresse du compte SMTP).                                                 |
+| `email.smtp.*`                         | Gmail, port 465            | Paramètres du transport SMTP Nodemailer (`host`, `port`, `secure`, `auth.user`, `auth.pass`).                          |
+| `email.info.from`                      | `Authentification Service` | Nom d'expéditeur utilisé quand l'application n'a pas de nom.                                                           |
+| `cors.origins`                         | `"*"`                      | Origines autorisées (tableau). **À restreindre en production.**                                                        |
+| `rateLimit.enabled`                    | `true`                     | Active la limitation de débit sur les routes sensibles.                                                                |
+| `rateLimit.windowMs` / `rateLimit.max` | `900000` / `20`            | Fenêtre (ms) et nombre maximal de requêtes par application et par IP.                                                  |
+| `front.url`                            | —                          | Présent dans la config mais pas encore utilisé par le code.                                                            |
+
+### E-mails
+
+| Situation                                                   | Comportement                                                                                         |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `email.provider: "console"`                                 | Rien n'est envoyé : expéditeur, destinataire, sujet et **code / lien** s'affichent dans le terminal. |
+| `smtp` sans identifiants (`host`, `auth.user`, `auth.pass`) | Bascule automatique sur la console, avec un avertissement.                                           |
+| `smtp`, échec d'envoi, hors production                      | L'erreur est journalisée et l'e-mail affiché en console ; la requête aboutit.                        |
+| `smtp`, échec d'envoi, `NODE_ENV=production`                | L'erreur remonte (500).                                                                              |
+
+Pour recevoir de vrais e-mails en local avec Gmail :
+
+```json
+"email": {
+  "provider": "smtp",
+  "from": "ton.adresse@gmail.com",
+  "smtp": { "auth": { "user": "ton.adresse@gmail.com", "pass": "<mot de passe d'application>" } }
+}
+```
+
+> ⚠️ Les ports SMTP sortants sont bloqués sur l'offre gratuite de Render : en production sur Render, il faudra un provider HTTP
+> (Brevo, ticket #34). Le provider `console` y afficherait les codes dans les logs : à réserver à une démonstration.
 
 ### Réglages d'une application cliente
 
@@ -334,6 +354,6 @@ Erreurs métier (via le gestionnaire global) :
   (1 h par défaut). Les scopes des tokens ne sont pas encore vérifiés par les routes.
 - Un seul code en attente par utilisateur : demander un code (mot de passe oublié, vérification d'e-mail, connexion MFA)
   remplace le code précédent.
-- L'adresse d'expédition des e-mails est codée en dur (`no-reply@yourapp.com`) ; `email.info.from` n'est pas utilisé.
+- Pas encore de provider d'e-mails HTTP : sur un hébergeur qui bloque SMTP (Render), aucun e-mail ne part (ticket #34).
 - Les middlewares de sécurité répondent avec leur propre format au lieu de passer par le gestionnaire d'erreurs global.
 - L'image Docker n'a pas encore été testée en conditions réelles.
