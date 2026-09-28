@@ -2,7 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../../middleware/error/errorHandler";
 import sendTemplateEmail from "../../../services/email/sendMails";
 import { templates } from "../../../services/email/models/Template";
-import { MFARequest } from "../../../models/MFARequest";
+import { MFARequestType } from "../../../models/enums/MFARequestType";
+import { findPendingMFARequest } from "../../../services/mfa/findPendingMFARequest";
 import { MFARequestStatus } from "../../../models/enums/MFARequestStatus";
 import { IAppClient } from "../../../models/AppClient";
 import { Consumer } from "../../../models/Consumer";
@@ -18,7 +19,7 @@ const deactivateMFAHandler = async (req: Request, res: Response, next: NextFunct
       throw error;
     }
 
-    const user = await Consumer.findById(userId);
+    const user = await Consumer.findOne({ id: userId, clientId: appClient.id });
 
     if (!user) {
       const error = new Error("User not found") as CustomError;
@@ -32,14 +33,12 @@ const deactivateMFAHandler = async (req: Request, res: Response, next: NextFunct
       throw error;
     }
 
-    const userMFARequest = await MFARequest.findOne({
+    const userMFARequest = await findPendingMFARequest(
+      appClient,
       userId,
-      verification: {
-        type: appClient.mfaSettings?.verificationMode,
-        code: appClient.mfaSettings?.verificationMode === "code" ? deactivationId : undefined,
-        link: appClient.mfaSettings?.verificationMode === "link" ? deactivationId : undefined,
-      },
-    });
+      MFARequestType.DEACTIVATE,
+      deactivationId
+    );
 
     if (!userMFARequest) {
       const error = new Error("Invalid or expired deactivation token") as CustomError;

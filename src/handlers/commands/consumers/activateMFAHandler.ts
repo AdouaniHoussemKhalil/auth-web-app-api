@@ -2,7 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../../middleware/error/errorHandler";
 import sendTemplateEmail from "../../../services/email/sendMails";
 import { templates } from "../../../services/email/models/Template";
-import { MFARequest } from "../../../models/MFARequest";
+import { MFARequestType } from "../../../models/enums/MFARequestType";
+import { findPendingMFARequest } from "../../../services/mfa/findPendingMFARequest";
 import { MFARequestStatus } from "../../../models/enums/MFARequestStatus";
 import { MFAMethod } from "../../../models/enums/MFAMethod";
 import { IAppClient } from "../../../models/AppClient";
@@ -20,7 +21,7 @@ const activateMFAHandler = async (req: Request, res: Response, next: NextFunctio
       throw error;
     }
 
-    const user = await Consumer.findOne({ id: userId });
+    const user = await Consumer.findOne({ id: userId, clientId: appClient.id });
 
     if (!user) {
       const error = new Error("User not found") as CustomError;
@@ -34,18 +35,12 @@ const activateMFAHandler = async (req: Request, res: Response, next: NextFunctio
       throw error;
     }
 
-    const query: any = {
+    const userMFARequest = await findPendingMFARequest(
+      appClient,
       userId,
-      "verification.type": appClient.mfaSettings?.verificationMode,
-    };
-
-    if (appClient.mfaSettings?.verificationMode === "code") {
-      query["verification.code"] = activationId;
-    } else if (appClient.mfaSettings?.verificationMode === "link") {
-      query["verification.link"] = activationId;
-    }
-
-    const userMFARequest = await MFARequest.findOne(query);
+      MFARequestType.ACTIVATE,
+      activationId
+    );
 
     if (!userMFARequest) {
       const error = new Error("Invalid or expired activation ID") as CustomError;
