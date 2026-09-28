@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../../middleware/error/errorHandler";
-import { randomBytes } from "crypto";
 import { Recipient } from "../../../services/email/models/Recipient";
 import sendTemplateEmail from "../../../services/email/sendMails";
 import { templates } from "../../../services/email/models/Template";
@@ -9,11 +8,12 @@ import { MFAMethod } from "../../../models/enums/MFAMethod";
 import { MFARequestStatus } from "../../../models/enums/MFARequestStatus";
 import { MFARequest } from "../../../models/MFARequest";
 import { Consumer } from "../../../models/Consumer";
-import { randomSixDigitCode } from "../../../utils/random";
+import { randomSixDigitCode, randomToken } from "../../../utils/random";
+import { hash } from "../../../services/hashing/hash";
+import { sha256 } from "../../../services/security/oneTimeCode";
+import { expirePendingMFARequests } from "../../../services/mfa/mfaRequests";
 
 const MFA_REQUEST_EXPIRATION_MINUTES = 15;
-
-const generateLinkId = (): string => randomBytes(32).toString("hex");
 
 const requestMFAHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -49,9 +49,12 @@ const requestMFAHandler = async (req: Request, res: Response, next: NextFunction
     // Le mode "both" n'est pas encore géré : il retombe sur le code.
     const verificationMode = appClient.mfaSettings?.verificationMode === "link" ? "link" : "code";
     const verificationCode = verificationMode === "code" ? randomSixDigitCode() : undefined;
-    const verificationLinkId = verificationMode === "link" ? generateLinkId() : undefined;
+    const verificationLinkId = verificationMode === "link" ? randomToken() : undefined;
     const expiryMinutes = appClient.mfaSettings?.expiryMinutes ?? MFA_REQUEST_EXPIRATION_MINUTES;
 
+    await expirePendingMFARequests(user.clientId, user.id, requestType);
+
+    // Seuls les hachés sont stockés : le code ou le lien en clair ne part que par e-mail.
     await MFARequest.create({
       userId: user.id,
       clientId: user.clientId,
@@ -60,8 +63,8 @@ const requestMFAHandler = async (req: Request, res: Response, next: NextFunction
       status: MFARequestStatus.PENDING,
       verification: {
         type: verificationMode,
-        code: verificationCode,
-        linkId: verificationLinkId,
+        code: verificationCode && (await hash(verificationCode)),
+        linkId: verificationLinkId && sha256(verificationLinkId),
       },
       expiresAt: new Date(Date.now() + expiryMinutes * 60 * 1000),
     });

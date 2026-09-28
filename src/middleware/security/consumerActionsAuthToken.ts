@@ -1,6 +1,6 @@
-// middleware/security/authenticateAppClient.ts
 import { Request, Response, NextFunction } from "express";
 import AppClient from "../../models/AppClient";
+import { safeEqual } from "../../services/security/oneTimeCode";
 
 export const consumerActionsAuthToken = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -15,16 +15,11 @@ export const consumerActionsAuthToken = async (req: Request, res: Response, next
     }
 
     const appClient = await AppClient.findOne({ id: appId, isActive: true });
-    if (!appClient) {
+
+    // Même message dans les deux cas pour ne pas révéler quels identifiants d'application existent.
+    if (!appClient || !safeEqual(appClient.secretKey, appSecret)) {
       return res.status(403).json({
         message: "Invalid or inactive app client",
-        isSuccess: false,
-      });
-    }
-
-    if (appClient.secretKey !== appSecret) {
-      return res.status(403).json({
-        message: "Invalid app secret key",
         isSuccess: false,
       });
     }

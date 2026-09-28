@@ -3,6 +3,7 @@ import { consumerActionsAuthToken } from "../../middleware/security/consumerActi
 import validate from "../../middleware/validation/validateSchema";
 import { registerSchema } from "../../validation/users/registerSchema";
 import { asyncHandler } from ".";
+import { authRateLimiter } from "../../middleware/security/rateLimiter";
 import { loginSchema } from "../../validation/users/loginSchema";
 import loginUserHandler from "../../handlers/commands/consumers/loginUserHandler";
 import { forgotPasswordSchema } from "../../validation/users/forgotPasswordSchema";
@@ -60,7 +61,12 @@ consumersRoutes.use(consumerActionsAuthToken);
  *       400:
  *         description: Données invalides
  */
-consumersRoutes.post("/auth/register", validate(registerSchema), asyncHandler(registerUserHandler));
+consumersRoutes.post(
+  "/auth/register",
+  authRateLimiter,
+  validate(registerSchema),
+  asyncHandler(registerUserHandler)
+);
 
 /**
  * @swagger
@@ -91,7 +97,12 @@ consumersRoutes.post("/auth/register", validate(registerSchema), asyncHandler(re
  *       401:
  *         description: Identifiants invalides
  */
-consumersRoutes.post("/auth/login", validate(loginSchema), asyncHandler(loginUserHandler));
+consumersRoutes.post(
+  "/auth/login",
+  authRateLimiter,
+  validate(loginSchema),
+  asyncHandler(loginUserHandler)
+);
 
 /**
  * @swagger
@@ -126,6 +137,7 @@ consumersRoutes.post("/auth/login", validate(loginSchema), asyncHandler(loginUse
 // Forgot password
 consumersRoutes.post(
   "/auth/forgotPassword",
+  authRateLimiter,
   validate(forgotPasswordSchema),
   asyncHandler(forgotPasswordHandler)
 );
@@ -163,6 +175,7 @@ consumersRoutes.post(
 // Verify reset code
 consumersRoutes.post(
   "/auth/verifyResetCode",
+  authRateLimiter,
   validate(verifyResetCodeSchema),
   asyncHandler(verifyResetCodeHandler)
 );
@@ -200,6 +213,7 @@ consumersRoutes.post(
 // Reset password
 consumersRoutes.put(
   "/auth/resetPassword",
+  authRateLimiter,
   validate(resetPasswordSchema),
   consumerActionsAuthToken,
   asyncHandler(resetPasswordHandler)
@@ -325,6 +339,7 @@ consumersRoutes.put(
 // Activate MFA
 consumersRoutes.post(
   "/auth/activateMFA",
+  authRateLimiter,
   validate(activatedMFASchema),
   consumerProtectedActionsAuthToken,
   asyncHandler(activateMFAHandler)
@@ -363,6 +378,7 @@ consumersRoutes.post(
 // Deactivate MFA
 consumersRoutes.post(
   "/auth/deactivateMFA",
+  authRateLimiter,
   validate(deactivateMFASchema),
   consumerProtectedActionsAuthToken,
   asyncHandler(deactivateMFAHandler)
@@ -401,6 +417,7 @@ consumersRoutes.post(
 // Login by MFA code
 consumersRoutes.post(
   "/auth/loginByMFA",
+  authRateLimiter,
   validate(loginByCodeMFASchema),
   asyncHandler(loginByCodeMFAHandler)
 );
@@ -438,6 +455,7 @@ consumersRoutes.post(
 // Request MFA
 consumersRoutes.post(
   "/auth/requestMFA",
+  authRateLimiter,
   validate(requestMFASchema),
   consumerProtectedActionsAuthToken,
   asyncHandler(requestMFAHandler)

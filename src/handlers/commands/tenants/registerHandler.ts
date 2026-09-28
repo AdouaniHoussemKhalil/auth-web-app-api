@@ -58,7 +58,6 @@ const registerHandler = async (req: Request, res: Response, next: NextFunction) 
       email: email,
       firstName: firstName,
       lastName: lastName,
-      secretKey: secretKey,
       role: role,
       scopes: scopes,
       tenantId: tenantId,

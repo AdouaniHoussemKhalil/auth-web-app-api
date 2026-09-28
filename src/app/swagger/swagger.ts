@@ -72,9 +72,12 @@ const swaggerOptions = {
             email: { type: "string" },
             password: { type: "string" },
             confirmPassword: { type: "string" },
-            currentPassword: { type: "string" },
+            resetToken: {
+              type: "string",
+              description: "Jeton renvoyé par /consumers/auth/verifyResetCode",
+            },
           },
-          required: ["email", "password", "confirmPassword", "currentPassword"],
+          required: ["email", "resetToken", "password", "confirmPassword"],
         },
         ConsumerUpdateProfile: {
           type: "object",
@@ -194,10 +197,11 @@ const swaggerOptions = {
     },
     security: [{ bearerAuth: [] }, { AppAuth: [] }, { AppSecret: [] }],
   },
-  apis: [path.join(__dirname, "../routes/*.{ts,js}")],
+  // Glob en slashs : sous Windows, path.join produit des antislashs non reconnus par le glob.
+  apis: [path.join(__dirname, "../routes/*.{ts,js}").split(path.sep).join("/")],
 };
 
-const specs = swaggerJsDoc(swaggerOptions);
+export const specs = swaggerJsDoc(swaggerOptions) as { paths: Record<string, unknown> };
 
 export const setupSwagger = (app: Express) => {
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
