@@ -362,6 +362,7 @@ Toutes les erreurs, y compris celles des middlewares de sécurité et de la limi
 | `invalidMfaVerification`                           | 400       | Demande MFA invalide ou expirée                                                                   |
 | `invalidRefreshToken`                              | 401       | Refresh token invalide, expiré, déjà utilisé ou révoqué                                           |
 | `emailNotVerified`                                 | 403       | Connexion avant vérification de l'e-mail                                                          |
+| `invalidGoogleToken` / `googleEmailNotVerified`    | 401       | ID token Google invalide, expiré, émis pour un autre Client ID, ou e-mail Google non vérifié      |
 | `internalError`                                    | 500       | Erreur interne (message générique, détail uniquement dans les logs)                               |
 
 Les autres erreurs métier ont un code explicite (`invalidCredentials`, `userAlreadyExists`, `passwordsDoNotMatch`…) ;
