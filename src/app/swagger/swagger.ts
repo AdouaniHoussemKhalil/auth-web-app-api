@@ -43,6 +43,24 @@ const swaggerOptions = {
           },
           required: ["email", "password", "firstName", "lastName", "role"],
         },
+        RefreshToken: {
+          type: "object",
+          properties: { refreshToken: { type: "string" } },
+          required: ["refreshToken"],
+        },
+        Logout: {
+          type: "object",
+          properties: {
+            refreshToken: { type: "string" },
+            allDevices: { type: "boolean", description: "Révoque toutes les sessions" },
+          },
+          required: ["refreshToken"],
+        },
+        ConsumerVerifyEmail: {
+          type: "object",
+          properties: { email: { type: "string" }, code: { type: "string" } },
+          required: ["email", "code"],
+        },
         ConsumerLogin: {
           type: "object",
           properties: {
@@ -174,7 +192,9 @@ const swaggerOptions = {
             tenantId: { type: "string" },
             name: { type: "string" },
             tokenExpiresIn: { type: "string" },
+            refreshTokenExpiresIn: { type: "string", example: "7d" },
             resetTokenExpiresIn: { type: "string" },
+            requireEmailVerification: { type: "boolean", default: false },
             mfaVerificationMode: { type: "string", enum: ["code", "link"] },
             mfaExpiresIn: { type: "string" },
             redirectUrl: { type: "string" },

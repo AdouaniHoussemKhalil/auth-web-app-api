@@ -16,6 +16,23 @@ const renderBaseTemplate = (content: string, props: EmailBaseProps) => `
 `;
 
 export const templates = {
+  emailVerification: {
+    id: "emailVerification",
+    subject: "Vérification de votre adresse e-mail",
+    getHtml: ({ recipientFullName, primaryColor, logoUrl, variable }: EmailBaseProps) =>
+      renderBaseTemplate(
+        `
+        <p>Merci pour votre inscription.</p>
+        <p>Pour confirmer votre adresse e-mail, veuillez saisir le code ci-dessous :</p>
+        <p style="font-size: 18px; font-weight: bold;">
+          Code de vérification : <strong>${variable}</strong>
+        </p>
+        <p>Ce code expirera dans 24 heures.</p>
+      `,
+        { recipientFullName, primaryColor, logoUrl, variable }
+      ),
+  },
+
   forgotPassword: {
     id: "forgotPassword",
     subject: "Réinitialisation de votre mot de passe",

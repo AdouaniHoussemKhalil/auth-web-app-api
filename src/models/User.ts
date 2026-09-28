@@ -15,6 +15,7 @@ export interface IUser extends Document {
   scopes: string[];
   isActive: boolean;
   isByGoogle?: boolean;
+  isEmailVerified?: boolean;
   secondaryUserAccess?: SecondaryUserAccessMethod;
   isMFAActivated?: boolean;
   role?: UserRole;
@@ -45,6 +46,7 @@ export const UserSchema: Schema = new Schema<IUser>({
   },
   isActive: { type: Boolean, required: false, default: true },
   isByGoogle: { type: Boolean, required: false, default: false },
+  isEmailVerified: { type: Boolean, required: false, default: false },
   usedMFAMethod: { type: String, enum: Object.values(MFAMethod), required: false },
   isMFAActivated: { type: Boolean, required: false, default: false },
   secondaryUserAccess: secondaryUserAccess,

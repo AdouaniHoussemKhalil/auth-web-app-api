@@ -21,6 +21,7 @@ const getConsumerDetailsByIdQuery = async (req: Request, res: Response, next: Ne
       email: consumer.email,
       isActive: consumer.isActive,
       isMFAEnabled: consumer.isMFAActivated,
+      isEmailVerified: consumer.isEmailVerified,
       creationDate: consumer.createdOn,
       id: consumer.id,
     };
