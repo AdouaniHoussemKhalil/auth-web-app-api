@@ -1,0 +1,20 @@
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  api:
+    build: .
+    depends_on:
+      - mongo
+    ports:
+      - "8080:8080"
+    environment:
+      # Surcharge la configuration (paquet `config`) ; ajouter ici SMTP et Google si besoin.
+      NODE_CONFIG: '{"db":{"uri":"mongodb://mongo:27017/auth"}}'
+
+volumes:
+  mongo-data:
