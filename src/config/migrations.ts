@@ -1,3 +1,4 @@
+import AppClient from "../models/AppClient";
 import { Tenant } from "../models/Tenant";
 import { logger } from "../utils/logger";
 
@@ -13,5 +14,15 @@ export const runMigrations = async () => {
   );
   if (modifiedCount) {
     logger.info({ count: modifiedCount }, "Existing tenants marked as email-verified");
+  }
+
+  // Mode MFA « both » retiré (#26) : il n'a jamais été géré et se comportait déjà comme « code ».
+  // updateMany direct : la validation du modèle refuserait désormais cette valeur.
+  const both = await AppClient.collection.updateMany(
+    { "mfaSettings.verificationMode": "both" },
+    { $set: { "mfaSettings.verificationMode": "code" } }
+  );
+  if (both.modifiedCount) {
+    logger.info({ count: both.modifiedCount }, "MFA mode 'both' replaced by 'code'");
   }
 };
