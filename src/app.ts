@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import config from "config";
 import helmet from "helmet";
-import errorHandler from "./middleware/error/errorHandler";
+import errorHandler, { notFoundHandler } from "./middleware/error/errorHandler";
 import consumersRoutes from "./app/routes/consumersRoutes";
 import tenantsRoutes from "./app/routes/tenantsRoutes";
 import configurationsRoutes from "./app/routes/configurationsRoutes";
@@ -29,6 +29,7 @@ export const createApp = () => {
   app.use("/tenants", tenantsRoutes);
   app.use("/config", configurationsRoutes);
 
+  app.use(notFoundHandler);
   app.use(errorHandler);
 
   return app;

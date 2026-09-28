@@ -75,8 +75,10 @@ Pour ajouter un endpoint :
 
 Conventions :
 
-- Erreurs métier : `const error = new Error("Message") as CustomError; error.status = 4xx; error.code = "camelCaseCode"; throw error;`,
-  puis `next(error)` dans le `catch`. Le format final est produit par `middleware/error/errorHandler.ts`, qui masque les erreurs 500.
+- Erreurs : `throw createError(4xx, "camelCaseCode", "Message")` (ou `next(createError(...))` dans un middleware), avec
+  `createError` exporté par `middleware/error/errorHandler.ts`. Ne jamais répondre `res.status(4xx).json(...)` directement :
+  toutes les erreurs passent par `errorHandler`, qui produit le format unique et masque les erreurs 500. Le code existant
+  utilise encore `new Error() as CustomError`, équivalent.
 - Réponses de succès : JSON avec `isSuccess: true` (plus `message`, `data`, `user`, `access_token`, `refresh_token` selon le cas).
 - Identifiants métier : champ `id` (UUID via `crypto.randomUUID()`), distinct du `_id` Mongo. Requêter par `{ id }`.
 - **Toute recherche de consumer filtre sur l'application** : `Consumer.findOne({ ..., clientId: appClient.id })`.
@@ -105,7 +107,8 @@ Conventions :
 - **mongodb-memory-server** télécharge le binaire MongoDB (≈ 80 Mo) au premier lancement ; le premier `npm test` peut être long.
   Définir `MONGOMS_DISABLE_POSTINSTALL=1` pour éviter le téléchargement au `npm install` si le binaire est déjà en cache.
 - **Chemins et globs** : sous Windows, `path.join` produit des antislashs que les globs ne comprennent pas (voir `swagger.ts`).
-- Les middlewares de sécurité répondent avec leur propre format (`{ message, isSuccess }`) au lieu de passer par `errorHandler`.
+- **Disque presque plein** : MongoDB refuse de construire des index sous 500 Mo libres. Les tests le désactivent
+  (`indexBuildMinAvailableDiskSpaceMB=0` dans `tests/helpers/globalSetup.ts`), mais un serveur local peut échouer à créer ses index.
 - La section « Limites connues » du README liste les autres limites.
 
 ## Workflow Git
