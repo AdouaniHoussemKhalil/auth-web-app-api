@@ -46,7 +46,7 @@ describe("Applications clientes", () => {
       .set(tenantHeaders(tenant));
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual([expect.objectContaining({ id: client.appId })]);
+    expect(res.body.data).toEqual([expect.objectContaining({ id: client.appId })]);
   });
 
   it("désactive une application", async () => {

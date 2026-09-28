@@ -283,7 +283,7 @@ base prend effet au prochain token (connexion ou refresh).
 | POST    | `/tenants/forgotPassword`                             | Envoie un code de réinitialisation par e-mail (`email`).                                                                         |
 | POST    | `/tenants/verifyResetCode`                            | Échange le code (`email`, `resetCode`) contre un `resetToken`.                                                                   |
 | PUT     | `/tenants/resetPassword`                              | Nouveau mot de passe (`email`, `resetToken`, `password`, `confirmPassword`) ; ferme toutes les sessions.                         |
-| GET     | `/tenants/:tenantId/app/:appId/consumers`             | Consumers d'une application du tenant.                                                                                           |
+| GET     | `/tenants/:tenantId/app/:appId/consumers`             | Consumers d'une application, paginés (`page`, `limit`, `email` : recherche partielle).                                           |
 | GET     | `/tenants/:tenantId/app/:appId/consumers/:consumerId` | Détail d'un consumer.                                                                                                            |
 
 ### Applications clientes — `/config`
@@ -292,7 +292,7 @@ base prend effet au prochain token (connexion ou refresh).
 | ------- | --------------------------------------------- | ------------------------------------------------------------------------------------- |
 | POST    | `/config/apps/create`                         | Crée une application (voir [réglages](#réglages-dune-application-cliente)) → `appId`. |
 | PUT     | `/config/apps/update/:tenantId/:appId`        | Active / désactive l'application (`isActive`).                                        |
-| GET     | `/config/apps/:tenantId`                      | Liste les applications du tenant.                                                     |
+| GET     | `/config/apps/:tenantId`                      | Applications du tenant, paginées (`page`, `limit`).                                   |
 | GET     | `/config/apps/:tenantId/:appId`               | Détail d'une application, **y compris son `secretKey`**.                              |
 | POST    | `/config/apps/:tenantId/:appId/rotate-secret` | Nouveau `secretKey` ; révoque les sessions des consumers.                             |
 
@@ -316,6 +316,9 @@ base prend effet au prochain token (connexion ou refresh).
 | POST    | `/activateMFA`             | ✔              | Confirme l'activation (`userId`, `activationId` = code ou identifiant du lien).                                                                          |
 | POST    | `/deactivateMFA`           | ✔              | Confirme la désactivation (`userId`, `deactivationId`).                                                                                                  |
 | GET     | `/me/:id`                  | ✔              | Profil du consumer connecté.                                                                                                                             |
+
+Les listes sont paginées : `?page=1&limit=20` (limite maximale 100), réponse
+`{ "data": [...], "page": 1, "limit": 20, "total": 42, "isSuccess": true }`.
 
 Le détail des corps de requête est disponible dans Swagger (`/api-docs`) et dans `src/validation/`.
 

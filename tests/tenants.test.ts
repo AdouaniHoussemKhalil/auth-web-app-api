@@ -115,8 +115,8 @@ describe("Consultation des consumers par le tenant", () => {
       .get(`/tenants/${tenant.tenantId}/app/${client.appId}/consumers`)
       .set(tenantHeaders(tenant));
     expect(list.status).toBe(200);
-    expect(list.body).toEqual([expect.objectContaining({ id: consumer.id })]);
-    expect(list.body[0].password).toBeUndefined();
+    expect(list.body.data).toEqual([expect.objectContaining({ id: consumer.id })]);
+    expect(list.body.data[0].password).toBeUndefined();
 
     const detail = await request(app)
       .get(`/tenants/${tenant.tenantId}/app/${client.appId}/consumers/${consumer.id}`)
