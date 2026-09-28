@@ -261,6 +261,7 @@ base prend effet au prochain token (connexion ou refresh).
 | `app:read`                | `GET /config/apps/:tenantId`, `GET /config/apps/:tenantId/:appId`                   |
 | `app:update`              | `PUT /config/apps/update/...`, `POST /config/apps/.../rotate-secret`                |
 | `consumer:read`           | `GET /tenants/:tenantId/app/:appId/consumers[/:consumerId]`                         |
+| `consumer:delete`         | `DELETE /tenants/:tenantId/app/:appId/consumers/:consumerId`                        |
 | `consumer:updateProfile`  | `PUT /consumers/auth/updateProfile/:id`                                             |
 | `consumer:updatePassword` | `PUT /consumers/auth/updatePassword/:id`                                            |
 | `consumer:activateMFA`    | `POST /consumers/auth/activateMFA`, `requestMFA` avec `requestType: "activate"`     |
@@ -270,21 +271,23 @@ base prend effet au prochain token (connexion ou refresh).
 
 ### Tenants — `/tenants`
 
-| Méthode | Route                                                 | Description                                                                                                                      |
-| ------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| POST    | `/tenants/register`                                   | Inscription (`firstName`, `lastName`, `email`, `password`, `confirmPassword`) ; envoie un code de vérification, **aucun token**. |
-| POST    | `/tenants/verifyEmail`                                | Vérifie l'e-mail (`email`, `code`) → tokens (ouvre la session).                                                                  |
-| POST    | `/tenants/resendEmailVerification`                    | Renvoie un code de vérification (`email`).                                                                                       |
-| POST    | `/tenants/login`                                      | Vérifie le mot de passe et envoie un code MFA par e-mail → `{ MFARequired: true }`.                                              |
-| POST    | `/tenants/loginByMFACode`                             | Valide le code (`email`, `mfaCode`) → tokens.                                                                                    |
-| POST    | `/tenants/google-register`                            | Inscription / connexion avec un ID token Google (`token`) → tokens.                                                              |
-| POST    | `/tenants/refresh`                                    | Échange un refresh token (`refreshToken`) contre une nouvelle paire.                                                             |
-| POST    | `/tenants/logout`                                     | Révoque le refresh token (`refreshToken`, `allDevices?`).                                                                        |
-| POST    | `/tenants/forgotPassword`                             | Envoie un code de réinitialisation par e-mail (`email`).                                                                         |
-| POST    | `/tenants/verifyResetCode`                            | Échange le code (`email`, `resetCode`) contre un `resetToken`.                                                                   |
-| PUT     | `/tenants/resetPassword`                              | Nouveau mot de passe (`email`, `resetToken`, `password`, `confirmPassword`) ; ferme toutes les sessions.                         |
-| GET     | `/tenants/:tenantId/app/:appId/consumers`             | Consumers d'une application, paginés (`page`, `limit`, `email` : recherche partielle).                                           |
-| GET     | `/tenants/:tenantId/app/:appId/consumers/:consumerId` | Détail d'un consumer.                                                                                                            |
+| Méthode | Route                                                 | Description                                                                                                                                                         |
+| ------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST    | `/tenants/register`                                   | Inscription (`firstName`, `lastName`, `email`, `password`, `confirmPassword`) ; envoie un code de vérification, **aucun token**.                                    |
+| POST    | `/tenants/verifyEmail`                                | Vérifie l'e-mail (`email`, `code`) → tokens (ouvre la session).                                                                                                     |
+| POST    | `/tenants/resendEmailVerification`                    | Renvoie un code de vérification (`email`).                                                                                                                          |
+| POST    | `/tenants/login`                                      | Vérifie le mot de passe et envoie un code MFA par e-mail → `{ MFARequired: true }`.                                                                                 |
+| POST    | `/tenants/loginByMFACode`                             | Valide le code (`email`, `mfaCode`) → tokens.                                                                                                                       |
+| POST    | `/tenants/google-register`                            | Inscription / connexion avec un ID token Google (`token`) → tokens.                                                                                                 |
+| POST    | `/tenants/refresh`                                    | Échange un refresh token (`refreshToken`) contre une nouvelle paire.                                                                                                |
+| POST    | `/tenants/logout`                                     | Révoque le refresh token (`refreshToken`, `allDevices?`).                                                                                                           |
+| POST    | `/tenants/forgotPassword`                             | Envoie un code de réinitialisation par e-mail (`email`).                                                                                                            |
+| POST    | `/tenants/verifyResetCode`                            | Échange le code (`email`, `resetCode`) contre un `resetToken`.                                                                                                      |
+| PUT     | `/tenants/resetPassword`                              | Nouveau mot de passe (`email`, `resetToken`, `password`, `confirmPassword`) ; ferme toutes les sessions.                                                            |
+| GET     | `/tenants/:tenantId/app/:appId/consumers`             | Consumers d'une application, paginés (`page`, `limit`, `email` : recherche partielle).                                                                              |
+| GET     | `/tenants/:tenantId/app/:appId/consumers/:consumerId` | Détail d'un consumer.                                                                                                                                               |
+| DELETE  | `/tenants/:tenantId/app/:appId/consumers/:consumerId` | Supprime un consumer et ses données (scope `consumer:delete`).                                                                                                      |
+| DELETE  | `/tenants/:tenantId`                                  | Supprime le compte tenant **en cascade** : applications, consumers, sessions. Confirmation : `password`, ou `confirmEmail` pour un compte Google sans mot de passe. |
 
 ### Applications clientes — `/config`
 
@@ -316,6 +319,7 @@ base prend effet au prochain token (connexion ou refresh).
 | POST    | `/activateMFA`             | ✔              | Confirme l'activation (`userId`, `activationId` = code ou identifiant du lien).                                                                          |
 | POST    | `/deactivateMFA`           | ✔              | Confirme la désactivation (`userId`, `deactivationId`).                                                                                                  |
 | GET     | `/me/:id`                  | ✔              | Profil du consumer connecté.                                                                                                                             |
+| DELETE  | `/me/:id`                  | ✔              | Supprime son compte et ses données (`password`).                                                                                                         |
 
 Les listes sont paginées : `?page=1&limit=20` (limite maximale 100), réponse
 `{ "data": [...], "page": 1, "limit": 20, "total": 42, "isSuccess": true }`.
