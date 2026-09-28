@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { createEmailSender, resolveEmailProvider } from "../src/services/email/emailSender";
-import { consoleProvider } from "../src/services/email/providers";
+import { BREVO_API_URL, consoleProvider } from "../src/services/email/providers";
 import { logger } from "../src/utils/logger";
 
 jest.mock("nodemailer");
@@ -100,5 +100,51 @@ describe("Envoi", () => {
     await expect(createEmailSender({ smtp, isProduction: true })(message)).rejects.toThrow(
       "Connection timeout"
     );
+  });
+});
+
+describe("Provider Brevo", () => {
+  const brevo = { apiKey: "xkeysib-test" };
+  let fetchMock: jest.SpyInstance;
+
+  beforeEach(() => {
+    fetchMock = jest.spyOn(global, "fetch");
+  });
+
+  it("est choisi avec une clé API, remplacé par la console sans clé", () => {
+    expect(resolveEmailProvider({ provider: "brevo", brevo, isProduction: true }).name).toBe(
+      "brevo"
+    );
+    expect(resolveEmailProvider({ provider: "brevo", isProduction: false })).toBe(consoleProvider);
+  });
+
+  it("envoie l'e-mail par l'API HTTP de Brevo", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ messageId: "<1@brevo>" }), { status: 201 })
+    );
+
+    await createEmailSender({ provider: "brevo", brevo, isProduction: true })(message);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      BREVO_API_URL,
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ "api-key": "xkeysib-test" }),
+      })
+    );
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      sender: { name: "App", email: "sender@test.com" },
+      to: [{ email: "user@test.com" }],
+      subject: "Code",
+      htmlContent: "<p>123456</p>",
+    });
+  });
+
+  it("fait remonter une erreur de l'API en production", async () => {
+    fetchMock.mockResolvedValue(new Response("unauthorized sender", { status: 400 }));
+
+    await expect(
+      createEmailSender({ provider: "brevo", brevo, isProduction: true })(message)
+    ).rejects.toThrow("Brevo API error 400: unauthorized sender");
   });
 });

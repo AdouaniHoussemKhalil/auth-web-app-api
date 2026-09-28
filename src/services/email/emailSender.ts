@@ -1,15 +1,18 @@
 import { logger } from "../../utils/logger";
 import {
+  BrevoSettings,
   EmailMessage,
   EmailProvider,
   SmtpSettings,
   consoleProvider,
+  createBrevoProvider,
   createSmtpProvider,
 } from "./providers";
 
 export type EmailSettings = {
   provider?: string;
   smtp?: SmtpSettings;
+  brevo?: BrevoSettings;
   isProduction: boolean;
 };
 
@@ -19,7 +22,8 @@ const hasSmtpCredentials = (smtp?: SmtpSettings) =>
 /**
  * Choisit le provider d'e-mails :
  * - "console" : affichage dans le terminal ;
- * - "smtp" (défaut) : Nodemailer, ou console si les identifiants SMTP ne sont pas renseignés.
+ * - "smtp" (défaut) : Nodemailer, ou console si les identifiants SMTP ne sont pas renseignés ;
+ * - "brevo" : API HTTP de Brevo (pour les hébergeurs qui bloquent SMTP), ou console sans clé API.
  */
 export const resolveEmailProvider = (settings: EmailSettings): EmailProvider => {
   const provider = settings.provider ?? "smtp";
@@ -31,8 +35,16 @@ export const resolveEmailProvider = (settings: EmailSettings): EmailProvider => 
     return consoleProvider;
   }
 
+  if (provider === "brevo") {
+    if (!settings.brevo?.apiKey) {
+      logger.warn("Brevo API key is missing: emails will be printed to the console");
+      return consoleProvider;
+    }
+    return createBrevoProvider(settings.brevo);
+  }
+
   if (provider !== "smtp") {
-    throw new Error(`Unknown email provider "${provider}" (expected "smtp" or "console")`);
+    throw new Error(`Unknown email provider "${provider}" (expected "smtp", "brevo" or "console")`);
   }
 
   if (!hasSmtpCredentials(settings.smtp)) {

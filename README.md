@@ -142,23 +142,24 @@ Exemple de `config/local.json` :
 }
 ```
 
-| Clé                                    | Défaut                     | Description                                                                                                            |
-| -------------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `server.port`                          | `8080`                     | Port HTTP.                                                                                                             |
-| `server.trustProxy`                    | —                          | Valeur Express `trust proxy`. À définir derrière un reverse proxy pour que la limitation par IP voie la vraie adresse. |
-| `db.uri`                               | —                          | URI de connexion MongoDB.                                                                                              |
-| `google.clientId`                      | —                          | Client ID OAuth Google, pour vérifier les ID tokens de `/tenants/google-register`.                                     |
-| `aud`                                  | `tenant2025`               | Audience des JWT tenants.                                                                                              |
-| `tenant.scopes` / `consumer.scopes`    | voir `default.json`        | Scopes attribués à l'inscription.                                                                                      |
-| `email.provider`                       | `smtp`                     | `smtp` ou `console` (affiche les e-mails et leurs codes dans le terminal). Voir [E-mails](#e-mails).                   |
-| `email.from`                           | utilisateur SMTP           | Adresse d'expédition (avec Gmail, doit être l'adresse du compte SMTP).                                                 |
-| `email.smtp.*`                         | Gmail, port 465            | Paramètres du transport SMTP Nodemailer (`host`, `port`, `secure`, `auth.user`, `auth.pass`).                          |
-| `email.info.from`                      | `Authentification Service` | Nom d'expéditeur utilisé quand l'application n'a pas de nom.                                                           |
-| `cors.origins`                         | `"*"`                      | Origines autorisées (tableau). **À restreindre en production.**                                                        |
-| `rateLimit.enabled`                    | `true`                     | Active la limitation de débit sur les routes sensibles.                                                                |
-| `rateLimit.windowMs` / `rateLimit.max` | `900000` / `20`            | Fenêtre (ms) et nombre maximal de requêtes par application et par IP.                                                  |
-| `log.level`                            | `info` (`silent` en test)  | Niveau des logs pino : `trace`, `debug`, `info`, `warn`, `error`, `silent`.                                            |
-| `front.url`                            | —                          | Présent dans la config mais pas encore utilisé par le code.                                                            |
+| Clé                                    | Défaut                     | Description                                                                                                              |
+| -------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `server.port`                          | `8080`                     | Port HTTP.                                                                                                               |
+| `server.trustProxy`                    | —                          | Valeur Express `trust proxy`. À définir derrière un reverse proxy pour que la limitation par IP voie la vraie adresse.   |
+| `db.uri`                               | —                          | URI de connexion MongoDB.                                                                                                |
+| `google.clientId`                      | —                          | Client ID OAuth Google, pour vérifier les ID tokens de `/tenants/google-register`.                                       |
+| `aud`                                  | `tenant2025`               | Audience des JWT tenants.                                                                                                |
+| `tenant.scopes` / `consumer.scopes`    | voir `default.json`        | Scopes attribués à l'inscription.                                                                                        |
+| `email.provider`                       | `smtp`                     | `smtp`, `brevo` (API HTTP) ou `console` (affiche les e-mails et leurs codes dans le terminal). Voir [E-mails](#e-mails). |
+| `email.brevo.apiKey`                   | —                          | Clé API Brevo (`xkeysib-...`), pour `email.provider: "brevo"`.                                                           |
+| `email.from`                           | utilisateur SMTP           | Adresse d'expédition (avec Gmail, doit être l'adresse du compte SMTP).                                                   |
+| `email.smtp.*`                         | Gmail, port 465            | Paramètres du transport SMTP Nodemailer (`host`, `port`, `secure`, `auth.user`, `auth.pass`).                            |
+| `email.info.from`                      | `Authentification Service` | Nom d'expéditeur utilisé quand l'application n'a pas de nom.                                                             |
+| `cors.origins`                         | `"*"`                      | Origines autorisées (tableau). **À restreindre en production.**                                                          |
+| `rateLimit.enabled`                    | `true`                     | Active la limitation de débit sur les routes sensibles.                                                                  |
+| `rateLimit.windowMs` / `rateLimit.max` | `900000` / `20`            | Fenêtre (ms) et nombre maximal de requêtes par application et par IP.                                                    |
+| `log.level`                            | `info` (`silent` en test)  | Niveau des logs pino : `trace`, `debug`, `info`, `warn`, `error`, `silent`.                                              |
+| `front.url`                            | —                          | Présent dans la config mais pas encore utilisé par le code.                                                              |
 
 ### Logs
 
@@ -171,6 +172,7 @@ Logs pino : une ligne par requête (méthode, URL, statut, durée), sans en-têt
 | Situation                                                   | Comportement                                                                                         |
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `email.provider: "console"`                                 | Rien n'est envoyé : expéditeur, destinataire, sujet et **code / lien** s'affichent dans le terminal. |
+| `email.provider: "brevo"`                                   | Envoi par l'API HTTP de Brevo (HTTPS) ; sans clé API, bascule sur la console avec un avertissement.  |
 | `smtp` sans identifiants (`host`, `auth.user`, `auth.pass`) | Bascule automatique sur la console, avec un avertissement.                                           |
 | `smtp`, échec d'envoi, hors production                      | L'erreur est journalisée et l'e-mail affiché en console ; la requête aboutit.                        |
 | `smtp`, échec d'envoi, `NODE_ENV=production`                | L'erreur remonte (500).                                                                              |
@@ -185,8 +187,15 @@ Pour recevoir de vrais e-mails en local avec Gmail :
 }
 ```
 
-> ⚠️ Les ports SMTP sortants sont bloqués sur l'offre gratuite de Render : en production sur Render, il faudra un provider HTTP
-> (Brevo, ticket #34). Le provider `console` y afficherait les codes dans les logs : à réserver à une démonstration.
+Pour la production chez un hébergeur qui bloque SMTP (Render) : **Brevo**.
+
+1. Créer un compte Brevo (offre gratuite), puis vérifier l'adresse d'expédition (_Senders & IP → Senders_).
+2. Créer une clé API (_SMTP & API → API Keys_).
+3. Configurer :
+
+```json
+"email": { "provider": "brevo", "from": "adresse.verifiee@exemple.com", "brevo": { "apiKey": "xkeysib-..." } }
+```
 
 ### Migrations au démarrage
 
@@ -416,5 +425,4 @@ Les autres erreurs métier ont un code explicite (`invalidCredentials`, `userAlr
 
 ## Limites connues
 
-- Pas encore de provider d'e-mails HTTP : sur un hébergeur qui bloque SMTP (Render), aucun e-mail ne part (ticket #34).
 - L'image Docker n'a pas encore été testée en conditions réelles.
