@@ -59,7 +59,7 @@ export const googleRegister = async (req: Request, res: Response, next: NextFunc
     };
 
     const { access_token, refresh_token } = await generateTenantToken(
-      { jwtPayload: { result } },
+      { jwtPayload: result },
       tenant.secretKey
     );
 

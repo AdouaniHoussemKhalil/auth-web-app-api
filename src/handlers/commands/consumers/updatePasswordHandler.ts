@@ -28,7 +28,7 @@ const updatePasswordHandler = async (request: Request, response: Response, next:
       throw error;
     }
 
-    const user = await Consumer.findOne({ id: userId });
+    const user = await Consumer.findOne({ id: userId, clientId: (request as any).appClient.id });
 
     if (!user) {
       const error = new Error("User not exist") as CustomError;
@@ -47,7 +47,7 @@ const updatePasswordHandler = async (request: Request, response: Response, next:
     }
 
     user.password = await hash(password);
-    user.save();
+    await user.save();
 
     return response.status(201).json({
       message: "update password successfuly",

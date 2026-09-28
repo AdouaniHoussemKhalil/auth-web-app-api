@@ -15,7 +15,7 @@ const loginByCodeMFAHandler = async (request: Request, response: Response, next:
       throw error;
     }
 
-    const user = await Consumer.findOne({ email });
+    const user = await Consumer.findOne({ email, clientId: (request as any).appClient.id });
     if (!user) {
       const error = new Error("User not found") as CustomError;
       error.status = 404;

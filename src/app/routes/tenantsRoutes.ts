@@ -17,30 +17,34 @@ const tenantsRoutes = Router();
 
 /**
  * @swagger
- * /tenants/{tenantId}/consumers:
+ * /tenants/{tenantId}/app/{appId}/consumers:
  *   get:
- *     summary: Récupère la liste des consommateurs pour un tenant donné
+ *     summary: Récupère la liste des consommateurs d'une application du tenant
  *     tags: [Tenants Authentication]
  *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
  *       - in: path
  *         name: tenantId
  *         required: true
  *         schema:
  *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *              $ref: '#/components/schemas/TenantConsumers'
+ *       - in: path
+ *         name: appId
+ *         required: true
+ *         schema:
+ *           type: string
  *     responses:
- *       201:
+ *       200:
  *         description: Liste des consommateurs récupérée avec succès
- *       400:
- *         description: Liste des consommateurs non récupérée
+ *       401:
+ *         description: Token tenant manquant
  */
 tenantsRoutes.get(
-  "/tenants/{tenantId}/consumers",
+  "/:tenantId/app/:appId/consumers",
   tenantProtectedActionsAuthToken,
   asyncHandler(getConsumersQuery)
 );
@@ -52,6 +56,11 @@ tenantsRoutes.get(
  *     summary: Récupère les détails d'un consommateur pour un tenant donné par id
  *     tags: [Tenants Authentication]
  *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
  *       - in: path
  *         name: tenantId
  *         required: true
@@ -67,18 +76,11 @@ tenantsRoutes.get(
  *         required: true
  *         schema:
  *           type: string
- *
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *              $ref: '#/components/schemas/TenantConsumers'
  *     responses:
- *       201:
- *         description: Liste des consommateurs récupérée avec succès
- *       400:
- *         description: Liste des consommateurs non récupérée
+ *       200:
+ *         description: Détails du consommateur
+ *       404:
+ *         description: Consommateur introuvable
  */
 
 tenantsRoutes.get(
@@ -110,9 +112,9 @@ tenantsRoutes.post("/register", validate(registerSchema), asyncHandler(registerH
 
 /**
  * @swagger
- * /tenants/login:
+ * /tenants/loginByMFACode:
  *   post:
- *     summary: Authentifie un tenant avec MFA et retourne un token JWT
+ *     summary: Valide le code MFA reçu par e-mail et retourne les tokens JWT du tenant
  *     tags: [Tenants Authentication]
  *     requestBody:
  *       required: true
@@ -137,7 +139,7 @@ tenantsRoutes.post(
  * @swagger
  * /tenants/login:
  *   post:
- *     summary: Authentifie un tenant  et retourne un token JWT
+ *     summary: Vérifie le mot de passe du tenant et envoie un code MFA par e-mail
  *     tags: [Tenants Authentication]
  *     requestBody:
  *       required: true

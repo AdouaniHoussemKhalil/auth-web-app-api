@@ -21,7 +21,7 @@ const forgotPasswordHandler = async (request: Request, response: Response, next:
       throw error;
     }
 
-    const user = await Consumer.findOne({ email });
+    const user = await Consumer.findOne({ email, clientId: appClient.id });
     if (!user) {
       const error = new Error("User not exist") as CustomError;
       error.status = 401;
@@ -55,7 +55,7 @@ const forgotPasswordHandler = async (request: Request, response: Response, next:
       expires: resetPasswordExpires,
       type: SecondaryUserAccessMethodType.ForgotPassword,
     };
-    user.save();
+    await user.save();
     response.status(201).json({
       message: "Reset code sent to your email",
       resetPasswordToken,

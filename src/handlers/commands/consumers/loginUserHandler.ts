@@ -18,7 +18,9 @@ const loginUserHandler = async (request: Request, response: Response, next: Next
       throw error;
     }
 
-    const user = await Consumer.findOne({ email });
+    const appClient = (request as any).appClient;
+
+    const user = await Consumer.findOne({ email, clientId: appClient.id });
     if (!user) {
       const error = new Error("Invalid email or password") as CustomError;
       error.status = 401;
@@ -35,24 +37,9 @@ const loginUserHandler = async (request: Request, response: Response, next: Next
       throw error;
     }
 
-    const returnedUser: any = {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      role: user.role,
-      scopes: user.scopes,
-    };
-
-    const appClient = (request as any).appClient;
-    const { access_token, refresh_token } = await generateConsumerToken(
-      { jwtPayload: returnedUser },
-      appClient.id
-    );
-
     if (user.isMFAActivated) {
       const code = randomSixDigitCode();
-      const expiresInMs = appClient.mfaSettings?.expiryMinutes * 60 * 1000;
+      const expiresInMs = (appClient.mfaSettings?.expiryMinutes ?? 15) * 60 * 1000;
       user.secondaryUserAccess = {
         code: await hash(code),
         expires: new Date(Date.now() + expiresInMs),
@@ -75,13 +62,28 @@ const loginUserHandler = async (request: Request, response: Response, next: Next
         },
         variable: code,
       });
-      response.status(201).json({
+      return response.status(200).json({
         MFARequired: true,
         message: "MFA is required, Please check your email for the verification code.",
+        isSuccess: true,
       });
     }
 
-    response.status(200).json({
+    const returnedUser: any = {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      scopes: user.scopes,
+    };
+
+    const { access_token, refresh_token } = await generateConsumerToken(
+      { jwtPayload: returnedUser },
+      appClient.id
+    );
+
+    return response.status(200).json({
       access_token,
       refresh_token,
       user: returnedUser,
