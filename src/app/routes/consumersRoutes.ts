@@ -7,6 +7,8 @@ import { mfaRequestScope, requireScope } from "../../middleware/security/require
 import { authRateLimiter } from "../../middleware/security/rateLimiter";
 import { loginSchema } from "../../validation/users/loginSchema";
 import loginUserHandler from "../../handlers/commands/consumers/loginUserHandler";
+import googleLoginHandler from "../../handlers/commands/consumers/googleLoginHandler";
+import { googleLoginSchema } from "../../validation/users/googleLoginSchema";
 import { forgotPasswordSchema } from "../../validation/users/forgotPasswordSchema";
 import forgotPasswordHandler from "../../handlers/commands/consumers/forgotPasswordHandler";
 import { verifyResetCodeSchema } from "../../validation/users/verifyResetCodeSchema";
@@ -114,6 +116,51 @@ consumersRoutes.post(
   authRateLimiter,
   validate(loginSchema),
   asyncHandler(loginUserHandler)
+);
+
+/**
+ * @swagger
+ * /consumers/auth/google:
+ *   post:
+ *     summary: Inscription / connexion avec un ID token Google (Client ID Google de l'application)
+ *     description: >
+ *       Le premier passage crée le compte (sans mot de passe, e-mail vérifié par Google).
+ *       Si le MFA est activé, la réponse est MFARequired et le code s'envoie sur /consumers/auth/loginByMFA.
+ *     tags: [Consumers Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: x-app-id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: header
+ *         name: x-app-secret
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/GoogleLogin'
+ *     responses:
+ *       200:
+ *         description: Connexion réussie (ou MFARequired)
+ *       201:
+ *         description: Compte créé et connecté
+ *       400:
+ *         description: Connexion Google non configurée pour l'application (googleSignInDisabled)
+ *       401:
+ *         description: ID token Google invalide ou e-mail Google non vérifié
+ *       403:
+ *         description: Compte bloqué
+ */
+consumersRoutes.post(
+  "/auth/google",
+  authRateLimiter,
+  validate(googleLoginSchema),
+  asyncHandler(googleLoginHandler)
 );
 
 /**

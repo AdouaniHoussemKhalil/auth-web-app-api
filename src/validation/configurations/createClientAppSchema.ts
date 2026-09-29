@@ -1,5 +1,6 @@
 import { z } from "zod";
 import ms from "ms";
+import { googleClientIdSchema } from "./googleClientIdSchema";
 
 // Durée au format de la librairie `ms` : "15m", "1h", "7d"...
 const duration = z.string().refine((value) => typeof ms(value as ms.StringValue) === "number", {
@@ -26,4 +27,5 @@ export const createClientAppSchema = z.object({
       message: "primaryColor must be a hex color",
     })
     .optional(),
+  googleClientId: googleClientIdSchema.optional(),
 });

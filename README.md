@@ -53,12 +53,13 @@ d'une application invalide toutes les sessions de ses consumers.
 - Connexion en deux étapes : mot de passe, puis code à 6 chiffres envoyé par e-mail.
 - Sessions : refresh token avec rotation, déconnexion (une session ou toutes).
 - Gestion des applications clientes : création, activation / désactivation, consultation, rotation du secret.
-- Consultation des consumers de leurs applications.
+- Gestion des consumers de leurs applications : liste, détail, blocage / déblocage, suppression.
 
 **Consumers** (appels signés par les identifiants de l'application)
 
 - Inscription avec vérification de l'adresse e-mail (obligatoire ou non, selon l'application).
 - Connexion, refresh token avec rotation, déconnexion.
+- Connexion Google (ID token), si l'application a déclaré son Client ID Google.
 - Mot de passe oublié : code par e-mail → jeton de réinitialisation → nouveau mot de passe.
 - Modification du mot de passe et du profil.
 - MFA par e-mail : activation / désactivation par code ou par lien, puis connexion par code.
@@ -149,7 +150,7 @@ Exemple de `config/local.json` :
 | `server.port`                          | `8080`                     | Port HTTP.                                                                                                               |
 | `server.trustProxy`                    | —                          | Valeur Express `trust proxy`. À définir derrière un reverse proxy pour que la limitation par IP voie la vraie adresse.   |
 | `db.uri`                               | —                          | URI de connexion MongoDB.                                                                                                |
-| `google.clientId`                      | —                          | Client ID OAuth Google, pour vérifier les ID tokens de `/tenants/google-register`.                                       |
+| `google.clientId`                      | —                          | Client ID OAuth Google du dashboard, pour vérifier les ID tokens de `/tenants/google-register`.                          |
 | `aud`                                  | `tenant2025`               | Audience des JWT tenants.                                                                                                |
 | `tenant.scopes` / `consumer.scopes`    | voir `default.json`        | Scopes attribués à l'inscription.                                                                                        |
 | `email.provider`                       | `smtp`                     | `smtp`, `brevo` (API HTTP) ou `console` (affiche les e-mails et leurs codes dans le terminal). Voir [E-mails](#e-mails). |
@@ -209,16 +210,17 @@ le mode MFA `both` (retiré) est remplacé par `code`.
 
 Définis à la création (`POST /config/apps/create`) :
 
-| Champ                                     | Défaut       | Description                                                                       |
-| ----------------------------------------- | ------------ | --------------------------------------------------------------------------------- |
-| `tokenExpiresIn`                          | `1h`         | Durée de l'access token des consumers.                                            |
-| `refreshTokenExpiresIn`                   | `7d`         | Durée du refresh token.                                                           |
-| `resetTokenExpiresIn`                     | `15m`        | Durée du code « mot de passe oublié ».                                            |
-| `mfaVerificationMode`                     | `code`       | `code` (6 chiffres) ou `link` (lien vers `redirectUrl`).                          |
-| `mfaExpiresIn`                            | `15m`        | Durée des demandes d'activation / désactivation MFA.                              |
-| `requireEmailVerification`                | `false`      | Si `true`, un consumer ne peut pas se connecter avant d'avoir vérifié son e-mail. |
-| `redirectUrl`, `resetPasswordUrl`         | obligatoires | URLs du front de l'application.                                                   |
-| `supportEmail`, `logoUrl`, `primaryColor` | —            | Branding des e-mails.                                                             |
+| Champ                                     | Défaut       | Description                                                                          |
+| ----------------------------------------- | ------------ | ------------------------------------------------------------------------------------ |
+| `tokenExpiresIn`                          | `1h`         | Durée de l'access token des consumers.                                               |
+| `refreshTokenExpiresIn`                   | `7d`         | Durée du refresh token.                                                              |
+| `resetTokenExpiresIn`                     | `15m`        | Durée du code « mot de passe oublié ».                                               |
+| `mfaVerificationMode`                     | `code`       | `code` (6 chiffres) ou `link` (lien vers `redirectUrl`).                             |
+| `mfaExpiresIn`                            | `15m`        | Durée des demandes d'activation / désactivation MFA.                                 |
+| `requireEmailVerification`                | `false`      | Si `true`, un consumer ne peut pas se connecter avant d'avoir vérifié son e-mail.    |
+| `redirectUrl`, `resetPasswordUrl`         | obligatoires | URLs du front de l'application.                                                      |
+| `supportEmail`, `logoUrl`, `primaryColor` | —            | Branding des e-mails.                                                                |
+| `googleClientId`                          | —            | Client ID OAuth Google : active `/consumers/auth/google`. Modifiable, `null` retire. |
 
 ## Structure du projet
 
@@ -315,32 +317,33 @@ base prend effet au prochain token (connexion ou refresh).
 | Méthode | Route                                         | Description                                                                           |
 | ------- | --------------------------------------------- | ------------------------------------------------------------------------------------- |
 | POST    | `/config/apps/create`                         | Crée une application (voir [réglages](#réglages-dune-application-cliente)) → `appId`. |
-| PUT     | `/config/apps/update/:tenantId/:appId`        | Active / désactive l'application (`isActive`).                                        |
+| PUT     | `/config/apps/update/:tenantId/:appId`        | Active / désactive (`isActive`), Client ID Google (`googleClientId`, `null` retire).  |
 | GET     | `/config/apps/:tenantId`                      | Applications du tenant, paginées (`page`, `limit`).                                   |
 | GET     | `/config/apps/:tenantId/:appId`               | Détail d'une application, **y compris son `secretKey`**.                              |
 | POST    | `/config/apps/:tenantId/:appId/rotate-secret` | Nouveau `secretKey` ; révoque les sessions des consumers.                             |
 
 ### Consumers — `/consumers/auth`
 
-| Méthode | Route                      | Jeton consumer | Description                                                                                                                                              |
-| ------- | -------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| POST    | `/register`                | —              | Inscription ; envoie un code de vérification d'e-mail.                                                                                                   |
-| POST    | `/verifyEmail`             | —              | Vérifie l'e-mail (`email`, `code`).                                                                                                                      |
-| POST    | `/resendEmailVerification` | —              | Renvoie un code de vérification (`email`).                                                                                                               |
-| POST    | `/login`                   | —              | Connexion → tokens, ou `{ MFARequired: true }` si le MFA est actif.                                                                                      |
-| POST    | `/loginByMFA`              | —              | Connexion avec le code MFA (`email`, `mfaCode`) → tokens.                                                                                                |
-| POST    | `/refresh`                 | —              | Échange un refresh token (`refreshToken`) contre une nouvelle paire.                                                                                     |
-| POST    | `/logout`                  | —              | Révoque le refresh token (`refreshToken`, `allDevices?`).                                                                                                |
-| POST    | `/forgotPassword`          | —              | Envoie un code de réinitialisation par e-mail (`email`).                                                                                                 |
-| POST    | `/verifyResetCode`         | —              | Échange le code (`email`, `resetCode`) contre un `resetToken`.                                                                                           |
-| PUT     | `/resetPassword`           | —              | Nouveau mot de passe (`email`, `resetToken`, `password`, `confirmPassword`).                                                                             |
-| PUT     | `/updatePassword/:id`      | ✔              | Change le mot de passe (`userId`, `currentPassword`, `password`, `confirmPassword`) ; ferme les autres sessions et renvoie une nouvelle paire de tokens. |
-| PUT     | `/updateProfile/:id`       | ✔              | Modifie prénom / nom (`userId`, `newFirstName`, `newLastName`).                                                                                          |
-| POST    | `/requestMFA`              | ✔              | Demande d'activation / désactivation (`email`, `requestType`: `activate` \| `deactivate`).                                                               |
-| POST    | `/activateMFA`             | ✔              | Confirme l'activation (`userId`, `activationId` = code ou identifiant du lien).                                                                          |
-| POST    | `/deactivateMFA`           | ✔              | Confirme la désactivation (`userId`, `deactivationId`).                                                                                                  |
-| GET     | `/me/:id`                  | ✔              | Profil du consumer connecté.                                                                                                                             |
-| DELETE  | `/me/:id`                  | ✔              | Supprime son compte et ses données (`password`).                                                                                                         |
+| Méthode | Route                      | Jeton consumer | Description                                                                                                                                                                             |
+| ------- | -------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST    | `/register`                | —              | Inscription ; envoie un code de vérification d'e-mail.                                                                                                                                  |
+| POST    | `/verifyEmail`             | —              | Vérifie l'e-mail (`email`, `code`).                                                                                                                                                     |
+| POST    | `/resendEmailVerification` | —              | Renvoie un code de vérification (`email`).                                                                                                                                              |
+| POST    | `/login`                   | —              | Connexion → tokens, ou `{ MFARequired: true }` si le MFA est actif.                                                                                                                     |
+| POST    | `/loginByMFA`              | —              | Connexion avec le code MFA (`email`, `mfaCode`) → tokens.                                                                                                                               |
+| POST    | `/google`                  | —              | Inscription / connexion avec un ID token Google (`token`), vérifié avec le `googleClientId` de l'application → tokens (`201` et `isNewUser` à la création), ou `{ MFARequired: true }`. |
+| POST    | `/refresh`                 | —              | Échange un refresh token (`refreshToken`) contre une nouvelle paire.                                                                                                                    |
+| POST    | `/logout`                  | —              | Révoque le refresh token (`refreshToken`, `allDevices?`).                                                                                                                               |
+| POST    | `/forgotPassword`          | —              | Envoie un code de réinitialisation par e-mail (`email`).                                                                                                                                |
+| POST    | `/verifyResetCode`         | —              | Échange le code (`email`, `resetCode`) contre un `resetToken`.                                                                                                                          |
+| PUT     | `/resetPassword`           | —              | Nouveau mot de passe (`email`, `resetToken`, `password`, `confirmPassword`).                                                                                                            |
+| PUT     | `/updatePassword/:id`      | ✔              | Change le mot de passe (`userId`, `currentPassword`, `password`, `confirmPassword`) ; ferme les autres sessions et renvoie une nouvelle paire de tokens.                                |
+| PUT     | `/updateProfile/:id`       | ✔              | Modifie prénom / nom (`userId`, `newFirstName`, `newLastName`).                                                                                                                         |
+| POST    | `/requestMFA`              | ✔              | Demande d'activation / désactivation (`email`, `requestType`: `activate` \| `deactivate`).                                                                                              |
+| POST    | `/activateMFA`             | ✔              | Confirme l'activation (`userId`, `activationId` = code ou identifiant du lien).                                                                                                         |
+| POST    | `/deactivateMFA`           | ✔              | Confirme la désactivation (`userId`, `deactivationId`).                                                                                                                                 |
+| GET     | `/me/:id`                  | ✔              | Profil du consumer connecté.                                                                                                                                                            |
+| DELETE  | `/me/:id`                  | ✔              | Supprime son compte et ses données (`password`, ou `confirmEmail` pour un compte Google sans mot de passe).                                                                             |
 
 Les listes sont paginées : `?page=1&limit=20` (limite maximale 100), réponse
 `{ "data": [...], "page": 1, "limit": 20, "total": 42, "isSuccess": true }`.
@@ -466,6 +469,8 @@ Toutes les erreurs, y compris celles des middlewares de sécurité et de la limi
 | `emailNotVerified`                                 | 403       | Connexion d'un tenant, ou d'un consumer si l'application l'exige, avant vérification de l'e-mail  |
 | `UserBlocked`                                      | 403       | Connexion d'un compte bloqué (après vérification du mot de passe ou du code MFA)                  |
 | `invalidGoogleToken` / `googleEmailNotVerified`    | 401       | ID token Google invalide, expiré, émis pour un autre Client ID, ou e-mail Google non vérifié      |
+| `googleSignInDisabled`                             | 400       | Connexion Google d'un consumer sur une application sans `googleClientId`                          |
+| `useGoogleSignIn`                                  | 401       | Connexion par mot de passe d'un compte créé avec Google (sans mot de passe)                       |
 | `internalError`                                    | 500       | Erreur interne (message générique, détail uniquement dans les logs)                               |
 
 Les autres erreurs métier ont un code explicite (`invalidCredentials`, `userAlreadyExists`, `passwordsDoNotMatch`…) ;

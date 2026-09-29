@@ -24,6 +24,7 @@ const createClientAppHandler = async (req: Request, res: Response, next: NextFun
       primaryColor,
       logoutUrl,
       resetPasswordUrl,
+      googleClientId,
     } = req.body;
 
     const tenant = await Tenant.findOne({ id: tenantId });
@@ -45,6 +46,7 @@ const createClientAppHandler = async (req: Request, res: Response, next: NextFun
       redirectUrl,
       resetPasswordUrl,
       logoutUrl,
+      googleClientId,
       secretKey: generateAppSecret(),
       apiKey: randomUUID().toString(),
       mfaSettings: {

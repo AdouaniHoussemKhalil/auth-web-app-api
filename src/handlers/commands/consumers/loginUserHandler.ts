@@ -1,14 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../../middleware/error/errorHandler";
-import { randomSixDigitCode } from "../../../utils/random";
 import { generateConsumerToken } from "../../../services/token/tokenService";
-import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
-import { templates } from "../../../services/email/models/Template";
-import { Recipient } from "../../../services/email/models/Recipient";
-import sendTemplateEmail from "../../../services/email/sendMails";
 import { Consumer } from "../../../models/Consumer";
 import { compare } from "../../../services/hashing/hash";
-import { setOneTimeCode } from "../../../services/security/oneTimeCode";
+import { mfaRequiredResponse, sendLoginMFACode } from "../../../services/mfa/loginCode";
 
 const loginUserHandler = async (request: Request, response: Response, next: NextFunction) => {
   try {
@@ -26,6 +21,14 @@ const loginUserHandler = async (request: Request, response: Response, next: Next
       const error = new Error("Invalid email or password") as CustomError;
       error.status = 401;
       error.code = "invalidCredentials";
+      throw error;
+    }
+
+    // Un consumer inscrit via Google n'a pas de mot de passe : il doit passer par /consumers/auth/google.
+    if (!user.password) {
+      const error = new Error("This account uses Google sign-in") as CustomError;
+      error.status = 401;
+      error.code = "useGoogleSignIn";
       throw error;
     }
 
@@ -54,31 +57,8 @@ const loginUserHandler = async (request: Request, response: Response, next: Next
     }
 
     if (user.isMFAActivated) {
-      const code = randomSixDigitCode();
-      const expiresInMs = (appClient.mfaSettings?.expiryMinutes ?? 15) * 60 * 1000;
-      await setOneTimeCode(user, SecondaryUserAccessMethodType.MFA, code, expiresInMs);
-
-      const recipient: Recipient = {
-        email: user.email,
-        fullName: `${user.firstName} ${user.lastName}`,
-      };
-
-      await user.save();
-
-      await sendTemplateEmail(templates.loginByCodeMFA.id, {
-        recipient,
-        appClientBranding: {
-          appName: appClient.branding.appName,
-          primaryColor: appClient.branding.primaryColor,
-          logoUrl: appClient.branding.logoUrl,
-        },
-        variable: code,
-      });
-      return response.status(200).json({
-        MFARequired: true,
-        message: "MFA is required, Please check your email for the verification code.",
-        isSuccess: true,
-      });
+      await sendLoginMFACode(user, appClient);
+      return response.status(200).json(mfaRequiredResponse);
     }
 
     const returnedUser: any = {
