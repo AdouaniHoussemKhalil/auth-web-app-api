@@ -305,6 +305,7 @@ base prend effet au prochain token (connexion ou refresh).
 | GET     | `/tenants/:tenantId/app/:appId/consumers`             | Consumers d'une application, paginés (`page`, `limit`, `email` : recherche partielle).                                                                              |
 | GET     | `/tenants/:tenantId/app/:appId/consumers/:consumerId` | Détail d'un consumer.                                                                                                                                               |
 | DELETE  | `/tenants/:tenantId/app/:appId/consumers/:consumerId` | Supprime un consumer et ses données (scope `consumer:delete`).                                                                                                      |
+| PUT     | `/tenants/:tenantId`                                  | Modifie le profil du tenant connecté (`firstName`, `lastName`) → profil à jour.                                                                                     |
 | DELETE  | `/tenants/:tenantId`                                  | Supprime le compte tenant **en cascade** : applications, consumers, sessions. Confirmation : `password`, ou `confirmEmail` pour un compte Google sans mot de passe. |
 
 ### Applications clientes — `/config`

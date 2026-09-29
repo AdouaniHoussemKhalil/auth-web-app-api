@@ -34,6 +34,8 @@ import {
 import deleteConsumerHandler from "../../handlers/commands/tenants/deleteConsumerHandler";
 import deleteAccountHandler from "../../handlers/commands/tenants/deleteAccountHandler";
 import { deleteTenantAccountSchema } from "../../validation/users/deleteAccountSchema";
+import updateProfileHandler from "../../handlers/commands/tenants/updateProfileHandler";
+import { updateTenantProfileSchema } from "../../validation/users/updateTenantProfileSchema";
 
 const tenantsRoutes = Router();
 
@@ -476,6 +478,42 @@ tenantsRoutes.delete(
   validate(deleteTenantAccountSchema),
   tenantProtectedActionsAuthToken,
   asyncHandler(deleteAccountHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}:
+ *   put:
+ *     summary: Modifie le profil (prénom, nom) du tenant connecté
+ *     tags: [Tenants Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/TenantUpdateProfile'
+ *     responses:
+ *       200:
+ *         description: Profil mis à jour
+ *       403:
+ *         description: Profil d'un autre tenant
+ */
+tenantsRoutes.put(
+  "/:tenantId",
+  validate(updateTenantProfileSchema),
+  tenantProtectedActionsAuthToken,
+  asyncHandler(updateProfileHandler)
 );
 
 export default tenantsRoutes;
