@@ -38,6 +38,14 @@ const loginUserHandler = async (request: Request, response: Response, next: Next
       throw error;
     }
 
+    // Vérifié après le mot de passe : un tiers ne peut pas savoir qu'un compte est bloqué.
+    if (!user.isActive) {
+      const error = new Error("User is blocked") as CustomError;
+      error.status = 403;
+      error.code = "UserBlocked";
+      throw error;
+    }
+
     if (appClient.requireEmailVerification && !user.isEmailVerified) {
       const error = new Error("Email address is not verified") as CustomError;
       error.status = 403;

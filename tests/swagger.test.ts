@@ -18,5 +18,6 @@ describe("Documentation Swagger", () => {
     expect(paths["/tenants/{tenantId}/app/{appId}/consumers/{consumerId}"]).toHaveProperty(
       "delete"
     );
+    expect(paths["/tenants/{tenantId}/app/{appId}/consumers/{consumerId}"]).toHaveProperty("patch");
   });
 });

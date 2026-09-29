@@ -273,6 +273,7 @@ base prend effet au prochain token (connexion ou refresh).
 | `app:read`                | `GET /config/apps/:tenantId`, `GET /config/apps/:tenantId/:appId`                   |
 | `app:update`              | `PUT /config/apps/update/...`, `POST /config/apps/.../rotate-secret`                |
 | `consumer:read`           | `GET /tenants/:tenantId/app/:appId/consumers[/:consumerId]`                         |
+| `consumer:update`         | `PATCH /tenants/:tenantId/app/:appId/consumers/:consumerId` (blocage)               |
 | `consumer:delete`         | `DELETE /tenants/:tenantId/app/:appId/consumers/:consumerId`                        |
 | `consumer:updateProfile`  | `PUT /consumers/auth/updateProfile/:id`                                             |
 | `consumer:updatePassword` | `PUT /consumers/auth/updatePassword/:id`                                            |
@@ -304,6 +305,7 @@ base prend effet au prochain token (connexion ou refresh).
 | PUT     | `/tenants/resetPassword`                              | Nouveau mot de passe (`email`, `resetToken`, `password`, `confirmPassword`) ; ferme toutes les sessions.                                                            |
 | GET     | `/tenants/:tenantId/app/:appId/consumers`             | Consumers d'une application, paginés (`page`, `limit`, `email` : recherche partielle).                                                                              |
 | GET     | `/tenants/:tenantId/app/:appId/consumers/:consumerId` | Détail d'un consumer.                                                                                                                                               |
+| PATCH   | `/tenants/:tenantId/app/:appId/consumers/:consumerId` | Bloque (`isActive: false`) ou débloque un consumer (scope `consumer:update`). Bloquer ferme toutes ses sessions.                                                    |
 | DELETE  | `/tenants/:tenantId/app/:appId/consumers/:consumerId` | Supprime un consumer et ses données (scope `consumer:delete`).                                                                                                      |
 | PUT     | `/tenants/:tenantId`                                  | Modifie le profil du tenant connecté (`firstName`, `lastName`) → profil à jour.                                                                                     |
 | DELETE  | `/tenants/:tenantId`                                  | Supprime le compte tenant **en cascade** : applications, consumers, sessions. Confirmation : `password`, ou `confirmEmail` pour un compte Google sans mot de passe. |
@@ -462,6 +464,7 @@ Toutes les erreurs, y compris celles des middlewares de sécurité et de la limi
 | `invalidMfaVerification`                           | 400       | Demande MFA invalide ou expirée                                                                   |
 | `invalidRefreshToken`                              | 401       | Refresh token invalide, expiré, déjà utilisé ou révoqué                                           |
 | `emailNotVerified`                                 | 403       | Connexion d'un tenant, ou d'un consumer si l'application l'exige, avant vérification de l'e-mail  |
+| `UserBlocked`                                      | 403       | Connexion d'un compte bloqué (après vérification du mot de passe ou du code MFA)                  |
 | `invalidGoogleToken` / `googleEmailNotVerified`    | 401       | ID token Google invalide, expiré, émis pour un autre Client ID, ou e-mail Google non vérifié      |
 | `internalError`                                    | 500       | Erreur interne (message générique, détail uniquement dans les logs)                               |
 

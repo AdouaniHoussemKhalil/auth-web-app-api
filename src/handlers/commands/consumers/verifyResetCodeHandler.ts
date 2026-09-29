@@ -11,7 +11,11 @@ const verifyResetCodeHandler = async (request: Request, response: Response, next
   try {
     const { email, resetCode } = request.body;
 
-    const user = await Consumer.findOne({ email, clientId: (request as any).appClient.id });
+    const user = await Consumer.findOne({
+      email,
+      clientId: (request as any).appClient.id,
+      isActive: true,
+    });
     if (!user) {
       const error = new Error("Invalid code") as CustomError;
       error.status = 400;

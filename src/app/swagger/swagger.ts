@@ -71,6 +71,12 @@ const swaggerOptions = {
           properties: { firstName: { type: "string" }, lastName: { type: "string" } },
           required: ["firstName", "lastName"],
         },
+        ConsumerStatusUpdate: {
+          type: "object",
+          description: "false bloque le consumer, true le débloque",
+          properties: { isActive: { type: "boolean" } },
+          required: ["isActive"],
+        },
         TenantDeleteAccount: {
           type: "object",
           description:

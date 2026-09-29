@@ -13,7 +13,7 @@ const forgotPasswordHandler = async (request: Request, response: Response, next:
     const appClient = (request as any).appClient;
     const { email } = request.body;
 
-    const user = await Consumer.findOne({ email, clientId: appClient.id });
+    const user = await Consumer.findOne({ email, clientId: appClient.id, isActive: true });
 
     // Même réponse que le compte existe ou non, pour ne pas révéler les e-mails inscrits.
     if (user) {
