@@ -20,6 +20,14 @@ const loginByCodeMFAHandler = async (request: Request, response: Response, next:
 
     await consumeOneTimeCode(user, SecondaryUserAccessMethodType.MFA, mfaCode);
 
+    // Bloqué entre l'envoi du code et sa saisie.
+    if (!user.isActive) {
+      const error = new Error("User is blocked") as CustomError;
+      error.status = 403;
+      error.code = "UserBlocked";
+      throw error;
+    }
+
     const returnedUser: any = {
       id: user.id,
       firstName: user.firstName,

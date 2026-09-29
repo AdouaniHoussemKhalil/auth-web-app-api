@@ -17,7 +17,11 @@ const resetPasswordHandler = async (request: Request, response: Response, next: 
       throw error;
     }
 
-    const user = await Consumer.findOne({ email, clientId: (request as any).appClient.id });
+    const user = await Consumer.findOne({
+      email,
+      clientId: (request as any).appClient.id,
+      isActive: true,
+    });
     if (!user) {
       const error = new Error("Invalid code") as CustomError;
       error.status = 400;

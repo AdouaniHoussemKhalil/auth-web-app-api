@@ -7,6 +7,8 @@ import { requireScope } from "../../middleware/security/requireScope";
 import { authRateLimiter } from "../../middleware/security/rateLimiter";
 import getConsumersQuery from "../../handlers/queries/tenants/getConsumersQuery";
 import getConsumerByIdQuery from "../../handlers/queries/tenants/getConsumerByIdQuery";
+import updateConsumerStatusHandler from "../../handlers/commands/tenants/updateConsumerStatusHandler";
+import { updateConsumerStatusSchema } from "../../validation/users/updateConsumerStatusSchema";
 import { registerSchema } from "../../validation/users/registerSchema";
 import registerHandler from "../../handlers/commands/tenants/registerHandler";
 import validate from "../../middleware/validation/validateSchema";
@@ -401,6 +403,53 @@ tenantsRoutes.post(
   authRateLimiter,
   validate(resendEmailVerificationSchema),
   asyncHandler(resendEmailVerificationHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/app/{appId}/consumers/{consumerId}:
+ *   patch:
+ *     summary: Bloque ou débloque un consumer (bloquer ferme toutes ses sessions)
+ *     tags: [Tenants Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: appId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: consumerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerStatusUpdate'
+ *     responses:
+ *       200:
+ *         description: Statut mis à jour, consumer renvoyé dans data
+ *       404:
+ *         description: Consumer introuvable
+ */
+tenantsRoutes.patch(
+  "/:tenantId/app/:appId/consumers/:consumerId",
+  validate(updateConsumerStatusSchema),
+  tenantProtectedActionsAuthToken,
+  requireScope("consumer:update"),
+  asyncHandler(updateConsumerStatusHandler)
 );
 
 /**

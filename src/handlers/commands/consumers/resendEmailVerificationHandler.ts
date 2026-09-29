@@ -12,7 +12,7 @@ const resendEmailVerificationHandler = async (
     const appClient = (request as any).appClient;
     const { email } = request.body;
 
-    const user = await Consumer.findOne({ email, clientId: appClient.id });
+    const user = await Consumer.findOne({ email, clientId: appClient.id, isActive: true });
     if (user && !user.isEmailVerified) {
       await sendEmailVerification(user, appClient);
     }
