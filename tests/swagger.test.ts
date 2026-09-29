@@ -14,6 +14,7 @@ describe("Documentation Swagger", () => {
 
     expect(paths["/consumers/auth/me/{id}"]).toHaveProperty("delete");
     expect(paths["/tenants/{tenantId}"]).toHaveProperty("delete");
+    expect(paths["/tenants/{tenantId}"]).toHaveProperty("put");
     expect(paths["/tenants/{tenantId}/app/{appId}/consumers/{consumerId}"]).toHaveProperty(
       "delete"
     );

@@ -66,6 +66,11 @@ const swaggerOptions = {
           properties: { password: { type: "string" } },
           required: ["password"],
         },
+        TenantUpdateProfile: {
+          type: "object",
+          properties: { firstName: { type: "string" }, lastName: { type: "string" } },
+          required: ["firstName", "lastName"],
+        },
         TenantDeleteAccount: {
           type: "object",
           description:
