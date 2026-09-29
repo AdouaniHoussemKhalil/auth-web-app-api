@@ -25,10 +25,15 @@ const updateClientAppHandler = async (req: Request, res: Response, next: NextFun
       throw error;
     }
 
-    const { isActive } = req.body;
+    const { isActive, googleClientId } = req.body;
 
-    if (typeof isActive !== "undefined" && isActive !== app.isActive) {
+    if (typeof isActive !== "undefined") {
       app.isActive = isActive;
+    }
+    if (googleClientId !== undefined) {
+      app.googleClientId = googleClientId ?? undefined;
+    }
+    if (app.isModified()) {
       await app.save();
     }
     return res.status(200).json({

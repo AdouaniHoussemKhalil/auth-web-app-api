@@ -63,8 +63,9 @@ const swaggerOptions = {
         },
         ConsumerDeleteAccount: {
           type: "object",
-          properties: { password: { type: "string" } },
-          required: ["password"],
+          description:
+            "password pour un compte classique, confirmEmail pour un compte Google sans mot de passe",
+          properties: { password: { type: "string" }, confirmEmail: { type: "string" } },
         },
         TenantUpdateProfile: {
           type: "object",
@@ -200,6 +201,11 @@ const swaggerOptions = {
           },
           required: ["token"],
         },
+        GoogleLogin: {
+          type: "object",
+          properties: { token: { type: "string", description: "ID token Google (credential)" } },
+          required: ["token"],
+        },
         TenantMFALogin: {
           type: "object",
           properties: {
@@ -225,6 +231,11 @@ const swaggerOptions = {
             supportEmail: { type: "string" },
             logoUrl: { type: "string" },
             primaryColor: { type: "string" },
+            googleClientId: {
+              type: "string",
+              description: "Client ID OAuth Google : active la connexion Google des consumers",
+              example: "1234-abcd.apps.googleusercontent.com",
+            },
           },
           required: ["tenantId", "name", "redirectUrl", "resetPasswordUrl", "supportEmail"],
         },
@@ -232,6 +243,11 @@ const swaggerOptions = {
           type: "object",
           properties: {
             isActive: { type: "boolean" },
+            googleClientId: {
+              type: "string",
+              nullable: true,
+              description: "Client ID OAuth Google ; null désactive la connexion Google",
+            },
           },
           required: [],
         },

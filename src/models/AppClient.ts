@@ -41,6 +41,8 @@ export interface IAppClient extends Document {
   mfaSettings?: MFASettings;
   isActive: boolean;
   allowedOrigins?: string[];
+  // Client ID OAuth Google de l'application : active /consumers/auth/google.
+  googleClientId?: string;
   redirectUrl: string;
   logoutUrl?: string;
   resetPasswordUrl: string;
@@ -69,6 +71,7 @@ const AppClientSchema = new Schema<IAppClient>({
   requireEmailVerification: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
   allowedOrigins: { type: [String], default: [] },
+  googleClientId: { type: String, required: false },
   mfaSettings: { type: MFASettingsSchema, default: {} },
   redirectUrl: { type: String, required: true },
   logoutUrl: { type: String, required: false },
