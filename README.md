@@ -257,9 +257,11 @@ peut passer chaque flux en mode **lien** (`emailVerificationMode` / `passwordRes
   nouveau mot de passe et l'envoie (via son back) à `PUT /consumers/auth/resetPassword` avec `email` et
   `resetToken` = `token`. Le jeton est à usage unique et expire après `resetTokenExpiresIn`.
 
-Réinitialiser son mot de passe (code ou lien) confirme aussi l'adresse e-mail. Après une réinitialisation ou une
-modification, un e-mail « Votre mot de passe a été modifié » alerte l'utilisateur (envoi au mieux : un échec d'envoi
-n'annule pas le changement).
+Les réponses de `register` et `resendEmailVerification` contiennent `emailVerificationMode`, celle de
+`forgotPassword` contient `passwordResetMode` (`code` ou `link`) : le front affiche la saisie du code ou « vérifiez
+votre boîte ». Réinitialiser son mot de passe (code ou lien) confirme aussi l'adresse e-mail. Après une
+réinitialisation ou une modification, un e-mail « Votre mot de passe a été modifié » alerte l'utilisateur (envoi au
+mieux : un échec d'envoi n'annule pas le changement).
 
 ## Structure du projet
 

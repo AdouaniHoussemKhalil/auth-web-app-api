@@ -66,6 +66,8 @@ const registerUserHandler = async (request: Request, response: Response, next: N
         message: "User registered, please verify your email",
         user: returnedUser,
         emailVerificationRequired: true,
+        // Code à saisir ou lien à cliquer : le front adapte son écran.
+        emailVerificationMode: appClient.emailVerificationMode ?? "code",
         isSuccess: true,
       });
     }
@@ -81,6 +83,7 @@ const registerUserHandler = async (request: Request, response: Response, next: N
       user: returnedUser,
       access_token,
       refresh_token,
+      emailVerificationMode: appClient.emailVerificationMode ?? "code",
       isSuccess: true,
     });
   } catch (error) {

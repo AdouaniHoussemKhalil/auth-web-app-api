@@ -74,6 +74,28 @@ describe("Configuration des liens", () => {
     expect(JSON.stringify(res.body.error.details)).toContain("emailVerifiedUrl");
   });
 
+  it("indique le mode dans les réponses, sans révéler l'existence d'un compte", async () => {
+    const registered = await request(app)
+      .post("/consumers/auth/register")
+      .set(appHeaders(client))
+      .send({
+        firstName: "Bob",
+        lastName: "Durand",
+        email: "mode@test.com",
+        password: PASSWORD,
+        confirmPassword: PASSWORD,
+      });
+    expect(registered.body.emailVerificationMode).toBe("link");
+
+    for (const email of ["mode@test.com", "inconnu@test.com"]) {
+      const resend = await request(app)
+        .post("/consumers/auth/resendEmailVerification")
+        .set(appHeaders(client))
+        .send({ email });
+      expect(resend.body.emailVerificationMode).toBe("link");
+    }
+  });
+
   it("garde le mode code par défaut", async () => {
     const plain = await createAppClient(app, tenant, { name: "Code" });
     const app2 = await AppClient.findOne({ id: plain.appId });
@@ -81,6 +103,11 @@ describe("Configuration des liens", () => {
     expect(app2).toMatchObject({ emailVerificationMode: "code", passwordResetMode: "code" });
     await registerConsumer(app, plain, "code@test.com");
     expect(emailsSent(templates.emailVerification.id)).toBeGreaterThan(0);
+    const forgot = await request(app)
+      .post("/consumers/auth/forgotPassword")
+      .set(appHeaders(plain))
+      .send({ email: "code@test.com" });
+    expect(forgot.body.passwordResetMode).toBe("code");
   });
 });
 
@@ -225,6 +252,7 @@ describe("Réinitialisation du mot de passe par lien", () => {
     const res = await forgot("inconnu@test.com");
 
     expect(res.status).toBe(201);
+    expect(res.body.passwordResetMode).toBe("link");
     expect(emailsSent(templates.forgotPasswordLink.id)).toBe(before);
   });
 });

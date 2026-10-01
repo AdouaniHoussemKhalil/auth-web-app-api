@@ -54,6 +54,8 @@ const forgotPasswordHandler = async (request: Request, response: Response, next:
 
     response.status(201).json({
       message: "If an account exists for this email, a reset code has been sent",
+      // Réglage de l'application : identique que le compte existe ou non.
+      passwordResetMode: appClient.passwordResetMode ?? "code",
       isSuccess: true,
     });
   } catch (error) {
