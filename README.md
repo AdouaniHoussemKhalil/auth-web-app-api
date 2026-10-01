@@ -57,10 +57,11 @@ d'une application invalide toutes les sessions de ses consumers.
 
 **Consumers** (appels signés par les identifiants de l'application)
 
-- Inscription avec vérification de l'adresse e-mail (obligatoire ou non, selon l'application).
+- Inscription avec vérification de l'adresse e-mail (obligatoire ou non, selon l'application), par code ou par lien.
 - Connexion, refresh token avec rotation, déconnexion.
 - Connexion Google (ID token), si l'application a déclaré son Client ID Google.
-- Mot de passe oublié : code par e-mail → jeton de réinitialisation → nouveau mot de passe.
+- Mot de passe oublié : code par e-mail → jeton de réinitialisation → nouveau mot de passe, ou lien vers la page de
+  réinitialisation de l'application.
 - Modification du mot de passe et du profil.
 - MFA par e-mail : activation / désactivation par code ou par lien, puis connexion par code.
 
@@ -153,6 +154,7 @@ Exemple de `config/local.json` :
 | `server.trustProxy`                    | —                          | Valeur Express `trust proxy`. À définir derrière un reverse proxy pour que la limitation par IP voie la vraie adresse.   |
 | `db.uri`                               | —                          | URI de connexion MongoDB.                                                                                                |
 | `google.clientId`                      | —                          | Client ID OAuth Google du dashboard, pour vérifier les ID tokens de `/tenants/google-register`.                          |
+| `api.publicUrl`                        | `http://localhost:<port>`  | URL publique de l'API, pour construire les liens de vérification d'e-mail.                                               |
 | `aud`                                  | `tenant2025`               | Audience des JWT tenants.                                                                                                |
 | `tenant.scopes` / `consumer.scopes`    | voir `default.json`        | Scopes attribués à l'inscription.                                                                                        |
 | `email.provider`                       | `smtp`                     | `smtp`, `brevo` (API HTTP) ou `console` (affiche les e-mails et leurs codes dans le terminal). Voir [E-mails](#e-mails). |
@@ -225,17 +227,37 @@ le mode MFA `both` (retiré) est remplacé par `code`.
 
 Définis à la création (`POST /config/apps/create`) :
 
-| Champ                                     | Défaut       | Description                                                                          |
-| ----------------------------------------- | ------------ | ------------------------------------------------------------------------------------ |
-| `tokenExpiresIn`                          | `1h`         | Durée de l'access token des consumers.                                               |
-| `refreshTokenExpiresIn`                   | `7d`         | Durée du refresh token.                                                              |
-| `resetTokenExpiresIn`                     | `15m`        | Durée du code « mot de passe oublié ».                                               |
-| `mfaVerificationMode`                     | `code`       | `code` (6 chiffres) ou `link` (lien vers `redirectUrl`).                             |
-| `mfaExpiresIn`                            | `15m`        | Durée des demandes d'activation / désactivation MFA.                                 |
-| `requireEmailVerification`                | `false`      | Si `true`, un consumer ne peut pas se connecter avant d'avoir vérifié son e-mail.    |
-| `redirectUrl`, `resetPasswordUrl`         | obligatoires | URLs du front de l'application.                                                      |
-| `supportEmail`, `logoUrl`, `primaryColor` | —            | Branding des e-mails.                                                                |
-| `googleClientId`                          | —            | Client ID OAuth Google : active `/consumers/auth/google`. Modifiable, `null` retire. |
+| Champ                                            | Défaut       | Description                                                                                                          |
+| ------------------------------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `tokenExpiresIn`                                 | `1h`         | Durée de l'access token des consumers.                                                                               |
+| `refreshTokenExpiresIn`                          | `7d`         | Durée du refresh token.                                                                                              |
+| `resetTokenExpiresIn`                            | `15m`        | Durée du code « mot de passe oublié ».                                                                               |
+| `mfaVerificationMode`                            | `code`       | `code` (6 chiffres) ou `link` (lien vers `redirectUrl`).                                                             |
+| `mfaExpiresIn`                                   | `15m`        | Durée des demandes d'activation / désactivation MFA.                                                                 |
+| `requireEmailVerification`                       | `false`      | Si `true`, un consumer ne peut pas se connecter avant d'avoir vérifié son e-mail.                                    |
+| `redirectUrl`, `resetPasswordUrl`                | obligatoires | URLs du front de l'application.                                                                                      |
+| `supportEmail`, `logoUrl`, `primaryColor`        | —            | Branding des e-mails.                                                                                                |
+| `googleClientId`                                 | —            | Client ID OAuth Google : active `/consumers/auth/google`. Modifiable, `null` retire.                                 |
+| `emailVerificationMode`                          | `code`       | Vérification d'e-mail : `code` (6 chiffres) ou `link` (voir [Liens](#liens-de-vérification-et-de-réinitialisation)). |
+| `passwordResetMode`                              | `code`       | Mot de passe oublié : `code` ou `link` (lien vers `resetPasswordUrl`).                                               |
+| `emailVerifiedUrl`, `emailVerificationFailedUrl` | —            | Redirections après un lien de vérification ; obligatoires en mode `link`.                                            |
+
+### Liens de vérification et de réinitialisation
+
+Par défaut, la vérification d'e-mail et le mot de passe oublié fonctionnent par **code à 6 chiffres**. Une application
+peut passer chaque flux en mode **lien** (`emailVerificationMode` / `passwordResetMode: "link"`) :
+
+- **Vérification d'e-mail** : l'e-mail contient un lien vers l'API (`GET /consumers/auth/verify-email-link?u=…&t=…`,
+  valable 24 h). L'API vérifie l'adresse puis redirige (303) vers `emailVerifiedUrl`, ou vers
+  `emailVerificationFailedUrl` en ajoutant `reason=expired` ou `reason=invalid` (les paramètres de l'URL sont conservés).
+  L'application n'a que ces deux pages à afficher (proposer « renvoyer le lien » sur la page d'échec). Un lien rouvert
+  sur une adresse déjà vérifiée mène au succès : certains antivirus de messagerie ouvrent les liens avant l'utilisateur.
+  `api.publicUrl` doit être l'URL publique de l'API.
+- **Mot de passe oublié** : l'e-mail contient `resetPasswordUrl?token=…&email=…`. La page de l'application demande le
+  nouveau mot de passe et l'envoie (via son back) à `PUT /consumers/auth/resetPassword` avec `email` et
+  `resetToken` = `token`. Le jeton est à usage unique et expire après `resetTokenExpiresIn`.
+
+Réinitialiser son mot de passe (code ou lien) confirme aussi l'adresse e-mail.
 
 ## Structure du projet
 
@@ -345,6 +367,7 @@ base prend effet au prochain token (connexion ou refresh).
 | POST    | `/register`                | —              | Inscription ; envoie un code de vérification d'e-mail.                                                                                                                                  |
 | POST    | `/verifyEmail`             | —              | Vérifie l'e-mail (`email`, `code`).                                                                                                                                                     |
 | POST    | `/resendEmailVerification` | —              | Renvoie un code de vérification (`email`).                                                                                                                                              |
+| GET     | `/verify-email-link`       | —              | Lien de vérification (mode `link`), **sans** en-têtes d'application : vérifie puis redirige vers `emailVerifiedUrl`, ou `emailVerificationFailedUrl?reason=expired\|invalid`.           |
 | POST    | `/login`                   | —              | Connexion → tokens, ou `{ MFARequired: true }` si le MFA est actif.                                                                                                                     |
 | POST    | `/loginByMFA`              | —              | Connexion avec le code MFA (`email`, `mfaCode`) → tokens.                                                                                                                               |
 | POST    | `/google`                  | —              | Inscription / connexion avec un ID token Google (`token`), vérifié avec le `googleClientId` de l'application → tokens (`201` et `isNewUser` à la création), ou `{ MFARequired: true }`. |
@@ -415,6 +438,7 @@ par défaut.
 | `TRUST_PROXY`             | oui sur Render           | `1`                                                | `server.trustProxy`  |
 | `CORS_ORIGINS`            | recommandé               | `["https://mon-front.com"]` (JSON)                 | `cors.origins`       |
 | `GOOGLE_CLIENT_ID`        | pour la connexion Google | `xxx.apps.googleusercontent.com`                   | `google.clientId`    |
+| `API_PUBLIC_URL`          | pour les liens           | `https://auth-api.onrender.com`                    | `api.publicUrl`      |
 | `PORT`                    | fourni par Render        | `10000`                                            | `server.port`        |
 | `LOG_LEVEL`               | non                      | `info`                                             | `log.level`          |
 | `SMTP_USER` / `SMTP_PASS` | avec SMTP (hors Render)  | —                                                  | `email.smtp.auth.*`  |

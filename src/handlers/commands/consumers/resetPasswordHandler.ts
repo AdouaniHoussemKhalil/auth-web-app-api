@@ -33,6 +33,8 @@ const resetPasswordHandler = async (request: Request, response: Response, next: 
     await consumeOneTimeCode(user, SecondaryUserAccessMethodType.ResetPassword, resetToken);
 
     user.password = await hash(password);
+    // Le code ou le lien reçu par e-mail prouve que l'utilisateur contrôle cette adresse.
+    user.isEmailVerified = true;
     await user.save();
 
     // Le mot de passe a pu fuiter : toutes les sessions existantes sont fermées.

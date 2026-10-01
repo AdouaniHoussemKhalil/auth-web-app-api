@@ -6,6 +6,7 @@ import { pinoHttp } from "pino-http";
 import { logger } from "./utils/logger";
 import errorHandler, { notFoundHandler } from "./middleware/error/errorHandler";
 import consumersRoutes from "./app/routes/consumersRoutes";
+import consumerLinksRoutes from "./app/routes/consumerLinksRoutes";
 import tenantsRoutes from "./app/routes/tenantsRoutes";
 import configurationsRoutes from "./app/routes/configurationsRoutes";
 import healthRoutes from "./app/routes/healthRoutes";
@@ -53,6 +54,8 @@ export const createApp = () => {
   setupSwagger(app);
 
   app.use(express.json());
+  // Liens ouverts depuis un e-mail : sans en-têtes x-app-id / x-app-secret, montés avant consumersRoutes.
+  app.use("/consumers", consumerLinksRoutes);
   app.use("/consumers", consumersRoutes);
   app.use("/tenants", tenantsRoutes);
   app.use("/config", configurationsRoutes);

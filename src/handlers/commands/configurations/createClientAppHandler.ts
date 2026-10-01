@@ -25,6 +25,10 @@ const createClientAppHandler = async (req: Request, res: Response, next: NextFun
       logoutUrl,
       resetPasswordUrl,
       googleClientId,
+      emailVerificationMode,
+      passwordResetMode,
+      emailVerifiedUrl,
+      emailVerificationFailedUrl,
     } = req.body;
 
     const tenant = await Tenant.findOne({ id: tenantId });
@@ -47,6 +51,10 @@ const createClientAppHandler = async (req: Request, res: Response, next: NextFun
       resetPasswordUrl,
       logoutUrl,
       googleClientId,
+      emailVerificationMode,
+      passwordResetMode,
+      emailVerifiedUrl,
+      emailVerificationFailedUrl,
       secretKey: generateAppSecret(),
       apiKey: randomUUID().toString(),
       mfaSettings: {
@@ -62,6 +70,8 @@ const createClientAppHandler = async (req: Request, res: Response, next: NextFun
         templates: [
           { id: templates.emailVerification.id, isActive: true },
           { id: templates.forgotPassword.id, isActive: true },
+          { id: templates.emailVerificationLink.id, isActive: true },
+          { id: templates.forgotPasswordLink.id, isActive: true },
           { id: templates.loginByCodeMFA.id, isActive: true },
           { id: templates.activateMFA.id, isActive: true },
           { id: templates.deactivateMFA.id, isActive: true },

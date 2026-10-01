@@ -27,5 +27,8 @@
   },
   "log": {
     "level": "LOG_LEVEL"
+  },
+  "api": {
+    "publicUrl": "API_PUBLIC_URL"
   }
 }

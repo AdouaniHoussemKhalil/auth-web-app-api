@@ -32,6 +32,36 @@ export const templates = {
     }),
   },
 
+  emailVerificationLink: {
+    id: "emailVerificationLink",
+    content: ({ appName, variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: `Confirmez votre adresse e-mail ${appName}`,
+      preheader: "Un clic pour confirmer votre adresse e-mail.",
+      title: "Confirmez votre adresse e-mail",
+      paragraphs: [
+        `Merci pour votre inscription sur ${appName}. Confirmez votre adresse en un clic :`,
+      ],
+      button: { label: "Confirmer mon adresse", url: variable },
+      expiry: expiry("Ce lien", expiresIn),
+      notice: "Si vous n'avez pas créé de compte, vous pouvez ignorer cet e-mail.",
+    }),
+  },
+
+  forgotPasswordLink: {
+    id: "forgotPasswordLink",
+    content: ({ appName, variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: `Réinitialisation de votre mot de passe ${appName}`,
+      preheader: "Choisissez un nouveau mot de passe.",
+      title: "Réinitialisez votre mot de passe",
+      paragraphs: [
+        "Vous avez demandé à réinitialiser votre mot de passe. Choisissez-en un nouveau :",
+      ],
+      button: { label: "Choisir un nouveau mot de passe", url: variable },
+      expiry: expiry("Ce lien", expiresIn),
+      notice: `${NOT_YOU} Votre mot de passe actuel reste valable.`,
+    }),
+  },
+
   forgotPassword: {
     id: "forgotPassword",
     content: ({ appName, variable, expiresIn }: TemplateContext): EmailContent => ({
