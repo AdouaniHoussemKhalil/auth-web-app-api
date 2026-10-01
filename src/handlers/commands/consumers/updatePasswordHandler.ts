@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../../middleware/error/errorHandler";
 import { compare, hash } from "../../../services/hashing/hash";
 import { Consumer } from "../../../models/Consumer";
+import { sendPasswordChangedAlert } from "../../../services/email/sendPasswordChangedAlert";
 import { consumerTokenPayload } from "../../../services/token/payloads";
 import {
   generateConsumerToken,
@@ -56,6 +57,7 @@ const updatePasswordHandler = async (request: Request, response: Response, next:
 
     // Toutes les sessions sont fermées (y compris leurs access tokens) ; l'appareil courant reçoit une nouvelle paire.
     await revokeAllRefreshTokens("consumer", user.id, user.clientId);
+    await sendPasswordChangedAlert(user, (request as any).appClient);
     const tokens = await generateConsumerToken(
       { jwtPayload: consumerTokenPayload(user) },
       user.clientId,

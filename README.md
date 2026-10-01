@@ -259,7 +259,9 @@ peut passer chaque flux en mode **lien** (`emailVerificationMode` / `passwordRes
 
 Les réponses de `register` et `resendEmailVerification` contiennent `emailVerificationMode`, celle de
 `forgotPassword` contient `passwordResetMode` (`code` ou `link`) : le front affiche la saisie du code ou « vérifiez
-votre boîte ». Réinitialiser son mot de passe (code ou lien) confirme aussi l'adresse e-mail.
+votre boîte ». Réinitialiser son mot de passe (code ou lien) confirme aussi l'adresse e-mail. Après une
+réinitialisation ou une modification, un e-mail « Votre mot de passe a été modifié » alerte l'utilisateur (envoi au
+mieux : un échec d'envoi n'annule pas le changement).
 
 ## Structure du projet
 
