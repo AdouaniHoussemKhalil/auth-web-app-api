@@ -6,7 +6,7 @@ describe("Documentation Swagger", () => {
 
     expect(paths.filter((path) => path.startsWith("/consumers/"))).toHaveLength(17);
     expect(paths.filter((path) => path.startsWith("/tenants/"))).toHaveLength(14);
-    expect(paths.filter((path) => path.startsWith("/config/"))).toHaveLength(5);
+    expect(paths.filter((path) => path.startsWith("/config/"))).toHaveLength(6);
   });
 
   it("documente les suppressions de compte", () => {

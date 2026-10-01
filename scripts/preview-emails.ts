@@ -39,6 +39,7 @@ const samples: Record<TemplateId, { variable: string; expiresInMs?: number }> = 
   },
   successfullyActivatedMFA: { variable: "" },
   successfullyDeactivatedMFA: { variable: "" },
+  testEmail: { variable: "123456", expiresInMs: 15 * 60 * 1000 },
 };
 
 mkdirSync(outDir, { recursive: true });
