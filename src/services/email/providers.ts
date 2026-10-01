@@ -6,6 +6,8 @@ export type EmailMessage = {
   to: string;
   subject: string;
   html: string;
+  /** Version texte brut (clients sans HTML, meilleure délivrabilité). */
+  text?: string;
   // Code ou lien contenu dans l'e-mail, affiché tel quel par le provider console.
   variable?: string;
 };
@@ -44,7 +46,8 @@ export const createSmtpProvider = (smtp: SmtpSettings): EmailProvider => {
 
   return {
     name: "smtp",
-    send: ({ from, to, subject, html }) => transporter.sendMail({ from, to, subject, html }),
+    send: ({ from, to, subject, html, text }) =>
+      transporter.sendMail({ from, to, subject, html, text }),
   };
 };
 
@@ -64,7 +67,7 @@ const parseAddress = (from: string) => {
  */
 export const createBrevoProvider = ({ apiKey }: BrevoSettings): EmailProvider => ({
   name: "brevo",
-  async send({ from, to, subject, html }) {
+  async send({ from, to, subject, html, text }) {
     const response = await fetch(BREVO_API_URL, {
       method: "POST",
       headers: {
@@ -77,6 +80,7 @@ export const createBrevoProvider = ({ apiKey }: BrevoSettings): EmailProvider =>
         to: [{ email: to }],
         subject,
         htmlContent: html,
+        ...(text && { textContent: text }),
       }),
     });
 

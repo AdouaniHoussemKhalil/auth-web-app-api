@@ -5,12 +5,13 @@ import { randomSixDigitCode } from "../../utils/random";
 import { setOneTimeCode } from "../security/oneTimeCode";
 import { templates } from "./models/Template";
 import sendTemplateEmail from "./sendMails";
+import { emailBrandingOf } from "./branding";
 
 export const EMAIL_VERIFICATION_EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Génère un code de vérification, l'enregistre sur l'utilisateur et l'envoie par e-mail.
- * Avec l'application du consumer, l'e-mail reprend son branding ; sans (tenant), le branding par défaut.
+ * Avec l'application du consumer, l'e-mail reprend son branding ; sans (tenant), celui du dashboard.
  */
 export const sendEmailVerification = async (user: IUser, appClient?: IAppClient) => {
   const code = randomSixDigitCode();
@@ -24,11 +25,8 @@ export const sendEmailVerification = async (user: IUser, appClient?: IAppClient)
 
   await sendTemplateEmail(templates.emailVerification.id, {
     recipient: { email: user.email, fullName: `${user.firstName} ${user.lastName}` },
-    appClientBranding: appClient && {
-      appName: appClient.branding?.appName,
-      primaryColor: appClient.branding?.primaryColor,
-      logoUrl: appClient.branding?.logoUrl,
-    },
+    branding: appClient && emailBrandingOf(appClient),
     variable: code,
+    expiresInMs: EMAIL_VERIFICATION_EXPIRATION_MS,
   });
 };

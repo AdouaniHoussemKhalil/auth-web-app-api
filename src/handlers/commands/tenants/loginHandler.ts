@@ -9,6 +9,8 @@ import { Recipient } from "../../../services/email/models/Recipient";
 import { templates } from "../../../services/email/models/Template";
 import sendTemplateEmail from "../../../services/email/sendMails";
 
+const LOGIN_CODE_EXPIRATION_MS = 15 * 60 * 1000;
+
 const loginHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
@@ -59,7 +61,7 @@ const loginHandler = async (req: Request, res: Response, next: NextFunction) => 
 
     const code = randomSixDigitCode();
 
-    await setOneTimeCode(tenant, SecondaryUserAccessMethodType.MFA, code, 15 * 60 * 1000);
+    await setOneTimeCode(tenant, SecondaryUserAccessMethodType.MFA, code, LOGIN_CODE_EXPIRATION_MS);
     await tenant.save();
 
     const recipient: Recipient = {
@@ -70,6 +72,7 @@ const loginHandler = async (req: Request, res: Response, next: NextFunction) => 
     await sendTemplateEmail(templates.loginByCodeMFA.id, {
       recipient,
       variable: code,
+      expiresInMs: LOGIN_CODE_EXPIRATION_MS,
     });
 
     // Les tokens ne sont délivrés qu'après validation du code (/tenants/loginByMFACode).

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { randomSixDigitCode } from "../../../utils/random";
 import { Recipient } from "../../../services/email/models/Recipient";
 import sendTemplateEmail from "../../../services/email/sendMails";
+import { emailBrandingOf } from "../../../services/email/branding";
 import { templates } from "../../../services/email/models/Template";
 import { Consumer } from "../../../models/Consumer";
 import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
@@ -33,12 +34,9 @@ const forgotPasswordHandler = async (request: Request, response: Response, next:
 
       await sendTemplateEmail(templates.forgotPassword.id, {
         recipient,
-        appClientBranding: {
-          appName: appClient.branding.appName,
-          primaryColor: appClient.branding.primaryColor,
-          logoUrl: appClient.branding.logoUrl,
-        },
+        branding: emailBrandingOf(appClient),
         variable: resetCode,
+        expiresInMs: ms((appClient.resetTokenExpiresIn || "15m") as ms.StringValue),
       });
     }
 

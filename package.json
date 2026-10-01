@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "test": "jest",
     "test:coverage": "jest --coverage",
-    "db:check-duplicates": "ts-node scripts/checkDuplicateIds.ts"
+    "db:check-duplicates": "ts-node scripts/checkDuplicateIds.ts",
+    "emails:preview": "ts-node scripts/preview-emails.ts"
   },
   "keywords": [],
   "author": "",

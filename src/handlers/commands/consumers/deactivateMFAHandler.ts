@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../../middleware/error/errorHandler";
 import sendTemplateEmail from "../../../services/email/sendMails";
+import { emailBrandingOf } from "../../../services/email/branding";
 import { templates } from "../../../services/email/models/Template";
 import { MFARequestType } from "../../../models/enums/MFARequestType";
 import { verifyMFARequest } from "../../../services/mfa/mfaRequests";
@@ -58,11 +59,7 @@ const deactivateMFAHandler = async (req: Request, res: Response, next: NextFunct
           email: user.email,
           fullName: `${user.firstName} ${user.lastName}`,
         },
-        appClientBranding: {
-          appName: appClient.branding.appName,
-          primaryColor: appClient.branding.primaryColor,
-          logoUrl: appClient.branding.logoUrl,
-        },
+        branding: emailBrandingOf(appClient),
       });
     }
 
