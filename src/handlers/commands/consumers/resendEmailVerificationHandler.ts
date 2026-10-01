@@ -19,6 +19,8 @@ const resendEmailVerificationHandler = async (
 
     response.status(200).json({
       message: "If this email needs verification, a new code has been sent",
+      // Réglage de l'application : identique que le compte existe ou non.
+      emailVerificationMode: appClient.emailVerificationMode ?? "code",
       isSuccess: true,
     });
   } catch (error) {
