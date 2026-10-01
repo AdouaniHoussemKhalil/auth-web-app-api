@@ -236,6 +236,29 @@ const swaggerOptions = {
               description: "Client ID OAuth Google : active la connexion Google des consumers",
               example: "1234-abcd.apps.googleusercontent.com",
             },
+            emailVerificationMode: {
+              type: "string",
+              enum: ["code", "link"],
+              default: "code",
+              description: "Vérification d'e-mail des consumers : code à 6 chiffres ou lien",
+            },
+            passwordResetMode: {
+              type: "string",
+              enum: ["code", "link"],
+              default: "code",
+              description:
+                "Mot de passe oublié : code, ou lien vers resetPasswordUrl?token=…&email=…",
+            },
+            emailVerifiedUrl: {
+              type: "string",
+              description:
+                "Redirection après un lien de vérification réussi (obligatoire en mode lien)",
+            },
+            emailVerificationFailedUrl: {
+              type: "string",
+              description:
+                "Redirection après un lien invalide ou expiré, avec ?reason=expired|invalid",
+            },
           },
           required: ["tenantId", "name", "redirectUrl", "resetPasswordUrl", "supportEmail"],
         },

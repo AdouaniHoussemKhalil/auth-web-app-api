@@ -26,6 +26,14 @@ const branding: EmailBranding = {
 const samples: Record<TemplateId, { variable: string; expiresInMs?: number }> = {
   emailVerification: { variable: "482913", expiresInMs: 24 * 60 * 60 * 1000 },
   forgotPassword: { variable: "730518", expiresInMs: 15 * 60 * 1000 },
+  emailVerificationLink: {
+    variable: "https://api.example.com/consumers/auth/verify-email-link?u=42&t=9f3c",
+    expiresInMs: 24 * 60 * 60 * 1000,
+  },
+  forgotPasswordLink: {
+    variable: "https://app.example.com/reset-password?token=7d1e&email=bob%40example.com",
+    expiresInMs: 15 * 60 * 1000,
+  },
   loginByCodeMFA: { variable: "195274", expiresInMs: 15 * 60 * 1000 },
   activateMFA: { variable: "604821", expiresInMs: 15 * 60 * 1000 },
   deactivateMFA: { variable: "318640", expiresInMs: 15 * 60 * 1000 },

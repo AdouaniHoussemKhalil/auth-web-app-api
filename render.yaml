@@ -26,3 +26,6 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
+      # URL publique de ce service (https://….onrender.com) : liens de vérification d'e-mail.
+      - key: API_PUBLIC_URL
+        sync: false
