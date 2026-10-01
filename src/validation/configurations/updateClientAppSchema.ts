@@ -14,4 +14,14 @@ export const updateClientAppSchema = z.object({
     .nullable()
     .optional(),
   supportEmail: z.string().email().optional(),
+  // URLs et vérification ; null retire une URL optionnelle.
+  redirectUrl: z.string().url().optional(),
+  resetPasswordUrl: z.string().url().optional(),
+  logoutUrl: z.string().url().nullable().optional(),
+  emailVerifiedUrl: z.string().url().nullable().optional(),
+  emailVerificationFailedUrl: z.string().url().nullable().optional(),
+  emailVerificationMode: z.enum(["code", "link"]).optional(),
+  passwordResetMode: z.enum(["code", "link"]).optional(),
+  mfaVerificationMode: z.enum(["code", "link"]).optional(),
+  requireEmailVerification: z.boolean().optional(),
 });

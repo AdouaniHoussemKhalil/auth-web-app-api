@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { Tenant } from "../../../models/Tenant";
-import { CustomError } from "../../../middleware/error/errorHandler";
+import { createError, CustomError } from "../../../middleware/error/errorHandler";
 import AppClient from "../../../models/AppClient";
 
 const updateClientAppHandler = async (req: Request, res: Response, next: NextFunction) => {
@@ -42,6 +42,36 @@ const updateClientAppHandler = async (req: Request, res: Response, next: NextFun
     if (logoUrl !== undefined) app.set("branding.logoUrl", logoUrl ?? undefined);
     if (primaryColor !== undefined) app.set("branding.primaryColor", primaryColor ?? undefined);
     if (supportEmail !== undefined) app.set("branding.supportEmail", supportEmail);
+
+    // URLs et vérification : seuls les champs envoyés changent ; null retire une URL optionnelle.
+    const settings = [
+      "redirectUrl",
+      "resetPasswordUrl",
+      "logoutUrl",
+      "emailVerifiedUrl",
+      "emailVerificationFailedUrl",
+      "emailVerificationMode",
+      "passwordResetMode",
+      "requireEmailVerification",
+    ] as const;
+    for (const field of settings) {
+      if (req.body[field] !== undefined) app.set(field, req.body[field] ?? undefined);
+    }
+    if (req.body.mfaVerificationMode !== undefined) {
+      app.set("mfaSettings.verificationMode", req.body.mfaVerificationMode);
+    }
+
+    // Vérifié sur l'état final : passer en mode lien, ou retirer une URL alors qu'il est actif.
+    if (
+      app.emailVerificationMode === "link" &&
+      (!app.emailVerifiedUrl || !app.emailVerificationFailedUrl)
+    ) {
+      throw createError(
+        400,
+        "verificationUrlsRequired",
+        'emailVerifiedUrl and emailVerificationFailedUrl are required when emailVerificationMode is "link"'
+      );
+    }
 
     if (app.isModified()) {
       await app.save();

@@ -225,7 +225,7 @@ le mode MFA `both` (retiré) est remplacé par `code`.
 
 ### Réglages d'une application cliente
 
-Définis à la création (`POST /config/apps/create`) :
+Définis à la création (`POST /config/apps/create`), modifiables ensuite (`PUT /config/apps/update/...`) :
 
 | Champ                                            | Défaut       | Description                                                                                                          |
 | ------------------------------------------------ | ------------ | -------------------------------------------------------------------------------------------------------------------- |
@@ -351,14 +351,14 @@ base prend effet au prochain token (connexion ou refresh).
 
 ### Applications clientes — `/config`
 
-| Méthode | Route                                         | Description                                                                                                              |
-| ------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| POST    | `/config/apps/create`                         | Crée une application (voir [réglages](#réglages-dune-application-cliente)) → `appId`.                                    |
-| PUT     | `/config/apps/update/:tenantId/:appId`        | `isActive`, `googleClientId`, apparence des e-mails : `name`, `logoUrl`, `primaryColor`, `supportEmail` (`null` retire). |
-| GET     | `/config/apps/:tenantId`                      | Applications du tenant, paginées (`page`, `limit`).                                                                      |
-| GET     | `/config/apps/:tenantId/:appId`               | Détail d'une application, **y compris son `secretKey`**.                                                                 |
-| POST    | `/config/apps/:tenantId/:appId/rotate-secret` | Nouveau `secretKey` ; révoque les sessions des consumers.                                                                |
-| POST    | `/config/apps/:tenantId/:appId/test-email`    | Envoie au tenant un e-mail d'exemple aux couleurs de l'application.                                                      |
+| Méthode | Route                                         | Description                                                                                                                                                                                                                                                                                                                                                |
+| ------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST    | `/config/apps/create`                         | Crée une application (voir [réglages](#réglages-dune-application-cliente)) → `appId`.                                                                                                                                                                                                                                                                      |
+| PUT     | `/config/apps/update/:tenantId/:appId`        | `isActive`, `googleClientId`, apparence (`name`, `logoUrl`, `primaryColor`, `supportEmail`), URLs (`redirectUrl`, `resetPasswordUrl`, `logoutUrl`, `emailVerifiedUrl`, `emailVerificationFailedUrl`) et vérification (`emailVerificationMode`, `passwordResetMode`, `mfaVerificationMode`, `requireEmailVerification`) ; `null` retire un champ optionnel. |
+| GET     | `/config/apps/:tenantId`                      | Applications du tenant, paginées (`page`, `limit`).                                                                                                                                                                                                                                                                                                        |
+| GET     | `/config/apps/:tenantId/:appId`               | Détail d'une application, **y compris son `secretKey`**.                                                                                                                                                                                                                                                                                                   |
+| POST    | `/config/apps/:tenantId/:appId/rotate-secret` | Nouveau `secretKey` ; révoque les sessions des consumers.                                                                                                                                                                                                                                                                                                  |
+| POST    | `/config/apps/:tenantId/:appId/test-email`    | Envoie au tenant un e-mail d'exemple aux couleurs de l'application.                                                                                                                                                                                                                                                                                        |
 
 ### Consumers — `/consumers/auth`
 
@@ -510,6 +510,7 @@ Toutes les erreurs, y compris celles des middlewares de sécurité et de la limi
 | `UserBlocked`                                      | 403       | Connexion d'un compte bloqué (après vérification du mot de passe ou du code MFA)                  |
 | `invalidGoogleToken` / `googleEmailNotVerified`    | 401       | ID token Google invalide, expiré, émis pour un autre Client ID, ou e-mail Google non vérifié      |
 | `googleSignInDisabled`                             | 400       | Connexion Google d'un consumer sur une application sans `googleClientId`                          |
+| `verificationUrlsRequired`                         | 400       | Mode lien de vérification d'e-mail sans `emailVerifiedUrl` / `emailVerificationFailedUrl`         |
 | `useGoogleSignIn`                                  | 401       | Connexion par mot de passe d'un compte créé avec Google (sans mot de passe)                       |
 | `internalError`                                    | 500       | Erreur interne (message générique, détail uniquement dans les logs)                               |
 
