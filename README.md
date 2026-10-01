@@ -284,18 +284,18 @@ Les routes protégées exigent un scope présent dans le token (`403 insufficien
 fixés à l'inscription (`tenant.scopes` / `consumer.scopes` de la config) et copiés dans chaque token : un changement en
 base prend effet au prochain token (connexion ou refresh).
 
-| Scope                     | Routes                                                                              |
-| ------------------------- | ----------------------------------------------------------------------------------- |
-| `app:create`              | `POST /config/apps/create`                                                          |
-| `app:read`                | `GET /config/apps/:tenantId`, `GET /config/apps/:tenantId/:appId`                   |
-| `app:update`              | `PUT /config/apps/update/...`, `POST /config/apps/.../rotate-secret`                |
-| `consumer:read`           | `GET /tenants/:tenantId/app/:appId/consumers[/:consumerId]`                         |
-| `consumer:update`         | `PATCH /tenants/:tenantId/app/:appId/consumers/:consumerId` (blocage)               |
-| `consumer:delete`         | `DELETE /tenants/:tenantId/app/:appId/consumers/:consumerId`                        |
-| `consumer:updateProfile`  | `PUT /consumers/auth/updateProfile/:id`                                             |
-| `consumer:updatePassword` | `PUT /consumers/auth/updatePassword/:id`                                            |
-| `consumer:activateMFA`    | `POST /consumers/auth/activateMFA`, `requestMFA` avec `requestType: "activate"`     |
-| `consumer:deactivateMFA`  | `POST /consumers/auth/deactivateMFA`, `requestMFA` avec `requestType: "deactivate"` |
+| Scope                     | Routes                                                                                 |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| `app:create`              | `POST /config/apps/create`                                                             |
+| `app:read`                | `GET /config/apps/:tenantId`, `GET /config/apps/:tenantId/:appId`                      |
+| `app:update`              | `PUT /config/apps/update/...`, `POST /config/apps/.../rotate-secret`, `.../test-email` |
+| `consumer:read`           | `GET /tenants/:tenantId/app/:appId/consumers[/:consumerId]`                            |
+| `consumer:update`         | `PATCH /tenants/:tenantId/app/:appId/consumers/:consumerId` (blocage)                  |
+| `consumer:delete`         | `DELETE /tenants/:tenantId/app/:appId/consumers/:consumerId`                           |
+| `consumer:updateProfile`  | `PUT /consumers/auth/updateProfile/:id`                                                |
+| `consumer:updatePassword` | `PUT /consumers/auth/updatePassword/:id`                                               |
+| `consumer:activateMFA`    | `POST /consumers/auth/activateMFA`, `requestMFA` avec `requestType: "activate"`        |
+| `consumer:deactivateMFA`  | `POST /consumers/auth/deactivateMFA`, `requestMFA` avec `requestType: "deactivate"`    |
 
 ## Endpoints
 
@@ -329,13 +329,14 @@ base prend effet au prochain token (connexion ou refresh).
 
 ### Applications clientes — `/config`
 
-| Méthode | Route                                         | Description                                                                           |
-| ------- | --------------------------------------------- | ------------------------------------------------------------------------------------- |
-| POST    | `/config/apps/create`                         | Crée une application (voir [réglages](#réglages-dune-application-cliente)) → `appId`. |
-| PUT     | `/config/apps/update/:tenantId/:appId`        | Active / désactive (`isActive`), Client ID Google (`googleClientId`, `null` retire).  |
-| GET     | `/config/apps/:tenantId`                      | Applications du tenant, paginées (`page`, `limit`).                                   |
-| GET     | `/config/apps/:tenantId/:appId`               | Détail d'une application, **y compris son `secretKey`**.                              |
-| POST    | `/config/apps/:tenantId/:appId/rotate-secret` | Nouveau `secretKey` ; révoque les sessions des consumers.                             |
+| Méthode | Route                                         | Description                                                                                                              |
+| ------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| POST    | `/config/apps/create`                         | Crée une application (voir [réglages](#réglages-dune-application-cliente)) → `appId`.                                    |
+| PUT     | `/config/apps/update/:tenantId/:appId`        | `isActive`, `googleClientId`, apparence des e-mails : `name`, `logoUrl`, `primaryColor`, `supportEmail` (`null` retire). |
+| GET     | `/config/apps/:tenantId`                      | Applications du tenant, paginées (`page`, `limit`).                                                                      |
+| GET     | `/config/apps/:tenantId/:appId`               | Détail d'une application, **y compris son `secretKey`**.                                                                 |
+| POST    | `/config/apps/:tenantId/:appId/rotate-secret` | Nouveau `secretKey` ; révoque les sessions des consumers.                                                                |
+| POST    | `/config/apps/:tenantId/:appId/test-email`    | Envoie au tenant un e-mail d'exemple aux couleurs de l'application.                                                      |
 
 ### Consumers — `/consumers/auth`
 

@@ -12,6 +12,8 @@ import { updateClientAppSchema } from "../../validation/configurations/updateCli
 import getAppClientsQuery from "../../handlers/queries/configurations/getAppClientsQuery";
 import getAppClientByIdQuery from "../../handlers/queries/configurations/getAppClientByIdQuery";
 import rotateClientAppSecretHandler from "../../handlers/commands/configurations/rotateClientAppSecretHandler";
+import sendTestEmailHandler from "../../handlers/commands/configurations/sendTestEmailHandler";
+import { authRateLimiter } from "../../middleware/security/rateLimiter";
 
 const configurationsRoutes = Router();
 
@@ -199,6 +201,44 @@ configurationsRoutes.post(
   tenantProtectedActionsAuthToken,
   requireScope("app:update"),
   asyncHandler(rotateClientAppSecretHandler)
+);
+
+/**
+ * @swagger
+ * /config/apps/{tenantId}/{appId}/test-email:
+ *   post:
+ *     summary: Envoie au tenant connecté un e-mail d'exemple aux couleurs de l'application
+ *     tags: [Configurations]
+ *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: appId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: E-mail envoyé ; data.to = adresse du tenant
+ *       404:
+ *         description: Application introuvable pour ce tenant
+ *       429:
+ *         description: Trop d'envois
+ */
+configurationsRoutes.post(
+  "/apps/:tenantId/:appId/test-email",
+  authRateLimiter,
+  tenantProtectedActionsAuthToken,
+  requireScope("app:update"),
+  asyncHandler(sendTestEmailHandler)
 );
 
 export default configurationsRoutes;

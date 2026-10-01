@@ -146,6 +146,23 @@ export const templates = {
         "Vous n'avez pas fait cette modification ? Changez votre mot de passe et réactivez la vérification.",
     }),
   },
+
+  // Envoyé au tenant depuis le dashboard, pour vérifier l'apparence des e-mails d'une application.
+  testEmail: {
+    id: "testEmail",
+    content: ({ appName, variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: `[Test] Aperçu des e-mails ${appName}`,
+      preheader: `Voici l'apparence des e-mails envoyés aux utilisateurs de ${appName}.`,
+      title: "Aperçu de vos e-mails",
+      paragraphs: [
+        `Voici l'apparence des e-mails envoyés aux utilisateurs de ${appName} : logo, couleur principale et e-mail de support.`,
+        "Exemple de code à usage unique :",
+      ],
+      code: variable,
+      expiry: expiry("Dans un vrai e-mail, ce code", expiresIn),
+      notice: "Cet e-mail de test a été envoyé depuis le dashboard. Aucun compte n'a été modifié.",
+    }),
+  },
 } as const;
 
 export type TemplateId = keyof typeof templates;
