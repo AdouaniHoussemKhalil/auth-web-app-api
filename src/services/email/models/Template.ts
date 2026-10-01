@@ -147,6 +147,21 @@ export const templates = {
     }),
   },
 
+  passwordChanged: {
+    id: "passwordChanged",
+    content: ({ appName }: TemplateContext): EmailContent => ({
+      subject: `Votre mot de passe ${appName} a été modifié`,
+      preheader: "Le mot de passe de votre compte vient d'être modifié.",
+      title: "Mot de passe modifié",
+      paragraphs: [
+        `Le mot de passe de votre compte ${appName} vient d'être modifié.`,
+        "Par sécurité, vos autres sessions ont été fermées : reconnectez-vous sur vos autres appareils.",
+      ],
+      notice:
+        "Ce n'est pas vous ? Réinitialisez immédiatement votre mot de passe avec « Mot de passe oublié » et contactez le support.",
+    }),
+  },
+
   successfullyActivatedMFA: {
     id: "successfullyActivatedMFA",
     content: ({ appName }: TemplateContext): EmailContent => ({

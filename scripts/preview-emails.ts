@@ -45,6 +45,7 @@ const samples: Record<TemplateId, { variable: string; expiresInMs?: number }> = 
     variable: "https://app.example.com/auth/MFA/deactivate?r=8b2e7d",
     expiresInMs: 15 * 60 * 1000,
   },
+  passwordChanged: { variable: "" },
   successfullyActivatedMFA: { variable: "" },
   successfullyDeactivatedMFA: { variable: "" },
   testEmail: { variable: "123456", expiresInMs: 15 * 60 * 1000 },

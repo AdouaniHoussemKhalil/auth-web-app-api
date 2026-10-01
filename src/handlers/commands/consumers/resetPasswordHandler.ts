@@ -3,6 +3,7 @@ import { CustomError } from "../../../middleware/error/errorHandler";
 import { Consumer } from "../../../models/Consumer";
 import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
 import { hash } from "../../../services/hashing/hash";
+import { sendPasswordChangedAlert } from "../../../services/email/sendPasswordChangedAlert";
 import { consumeOneTimeCode } from "../../../services/security/oneTimeCode";
 import { revokeAllRefreshTokens } from "../../../services/token/tokenService";
 
@@ -39,6 +40,7 @@ const resetPasswordHandler = async (request: Request, response: Response, next: 
 
     // Le mot de passe a pu fuiter : toutes les sessions existantes sont fermées.
     await revokeAllRefreshTokens("consumer", user.id, user.clientId);
+    await sendPasswordChangedAlert(user, (request as any).appClient);
 
     return response.status(201).json({
       message: "update password successfuly",
