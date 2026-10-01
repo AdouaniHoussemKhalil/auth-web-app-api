@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { CustomError } from "../../../middleware/error/errorHandler";
 import { Recipient } from "../../../services/email/models/Recipient";
 import sendTemplateEmail from "../../../services/email/sendMails";
+import { emailBrandingOf } from "../../../services/email/branding";
 import { templates } from "../../../services/email/models/Template";
 import { MFARequestType } from "../../../models/enums/MFARequestType";
 import { MFAMethod } from "../../../models/enums/MFAMethod";
@@ -87,12 +88,9 @@ const requestMFAHandler = async (req: Request, res: Response, next: NextFunction
 
     await sendTemplateEmail(templateId, {
       recipient,
-      appClientBranding: {
-        appName: appClient.branding.appName,
-        primaryColor: appClient.branding.primaryColor,
-        logoUrl: appClient.branding.logoUrl,
-      },
+      branding: emailBrandingOf(appClient),
       variable: emailVariable,
+      expiresInMs: expiryMinutes * 60 * 1000,
     });
 
     return res.status(200).json({ message: "MFA request processed", isSuccess: true });

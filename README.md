@@ -67,7 +67,8 @@ d'une application invalide toutes les sessions de ses consumers.
 **Transverse**
 
 - Validation des corps de requête avec **Zod**.
-- E-mails HTML (en français) personnalisés avec le nom, la couleur et le logo de l'application, envoyés par SMTP
+- E-mails HTML responsives (en français) aux couleurs de l'application : logo ou nom, couleur principale, e-mail de support,
+  durée de validité réelle, version texte brut ; envoyés par SMTP
   (Nodemailer) ou affichés dans le terminal en développement (provider `console`).
 - Documentation **Swagger** générée depuis les commentaires JSDoc des routes.
 
@@ -118,6 +119,7 @@ npm run dev
 | `npm run lint` / `lint:fix`  | ESLint + Prettier                                              |
 | `npm run format`             | Formatage Prettier                                             |
 | `npm test` / `test:coverage` | Tests d'intégration (MongoDB en mémoire, e-mails simulés)      |
+| `npm run emails:preview`     | Aperçu HTML de tous les e-mails dans `email-previews/`         |
 
 La CI GitHub Actions exécute `typecheck`, `lint`, `test` et `build` sur chaque PR vers `develop`.
 
@@ -179,6 +181,19 @@ Logs pino : une ligne par requête (méthode, URL, statut, durée), sans en-têt
 | `smtp` sans identifiants (`host`, `auth.user`, `auth.pass`) | Bascule automatique sur la console, avec un avertissement.                                           |
 | `smtp`, échec d'envoi, hors production                      | L'erreur est journalisée et l'e-mail affiché en console ; la requête aboutit.                        |
 | `smtp`, échec d'envoi, `NODE_ENV=production`                | L'erreur remonte (500).                                                                              |
+
+**Mise en forme** : `src/services/email/layout.ts` (mise en page commune : tableaux et styles en ligne pour Gmail /
+Outlook, données échappées) ; le contenu de chaque e-mail est dans `src/services/email/models/Template.ts`. Le branding
+vient de l'application du consumer (`emailBrandingOf`) : nom (`branding.appName`, à défaut le nom de l'application),
+logo, couleur principale (normalisée en `#RRGGBB`, texte du bouton noir ou blanc selon le contraste) et e-mail de
+support. Les e-mails des tenants utilisent l'identité du dashboard (`email.info.from`, orange de la console).
+
+Aperçu sans rien envoyer :
+
+```bash
+npm run emails:preview -- --name Lingutrack --color "#2563EB" --logo https://exemple.com/logo.png --support support@exemple.com
+# puis ouvrir email-previews/index.html
+```
 
 Pour recevoir de vrais e-mails en local avec Gmail :
 

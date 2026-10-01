@@ -3,6 +3,8 @@ import { Recipient } from "./models/Recipient";
 import { TemplateId, templates } from "./models/Template";
 import { createEmailSender } from "./emailSender";
 import { BrevoSettings, SmtpSettings } from "./providers";
+import { DASHBOARD_BRANDING, EmailBranding } from "./branding";
+import { formatDuration, renderEmail } from "./layout";
 
 const setting = <T>(key: string): T | undefined =>
   config.has(key) ? config.get<T>(key) : undefined;
@@ -18,40 +20,43 @@ const sendEmail = createEmailSender({
 
 // Avec Gmail, l'adresse d'expédition doit être celle du compte SMTP.
 const fromAddress = setting<string>("email.from") ?? smtp?.auth?.user ?? "no-reply@localhost";
-const defaultSenderName = setting<string>("email.info.from") ?? "Auth service";
 
+/**
+ * Envoie un e-mail à partir d'un template. `branding` : identité de l'application du consumer
+ * (`emailBrandingOf(appClient)`) ; absent, l'identité du dashboard (e-mails des tenants).
+ */
 export default async function sendTemplateEmail<T extends TemplateId>(
   templateId: T,
   {
     recipient,
-    appClientBranding,
+    branding = DASHBOARD_BRANDING,
     variable,
+    expiresInMs,
   }: {
     recipient: Recipient;
-    appClientBranding?: {
-      appName?: string;
-      primaryColor?: string;
-      logoUrl?: string;
-    };
+    branding?: EmailBranding;
     variable?: string;
+    /** Durée de validité du code ou du lien, affichée dans l'e-mail. */
+    expiresInMs?: number;
   }
 ) {
   const template = templates[templateId];
-
   if (!template) throw new Error(`Template "${templateId}" not found`);
 
-  const html = template.getHtml({
-    recipientFullName: recipient.fullName,
-    primaryColor: appClientBranding?.primaryColor ?? "#f6f3f3ff",
-    logoUrl: appClientBranding?.logoUrl,
+  const content = template.content({
+    appName: branding.appName,
     variable: variable ?? "",
+    expiresIn: expiresInMs ? formatDuration(expiresInMs) : undefined,
   });
+  const { html, text } = renderEmail(content, { recipientFullName: recipient.fullName, branding });
 
+  // Le nom d'expéditeur est celui de l'application ; les guillemets y sont retirés (en-tête From).
   return sendEmail({
-    from: `"${appClientBranding?.appName ?? defaultSenderName}" <${fromAddress}>`,
+    from: `"${branding.appName.replace(/["\\\r\n]/g, "")}" <${fromAddress}>`,
     to: recipient.email,
-    subject: template.subject,
+    subject: content.subject,
     html,
+    text,
     variable,
   });
 }

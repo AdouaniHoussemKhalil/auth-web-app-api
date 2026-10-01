@@ -3,6 +3,7 @@ import { IConsumer } from "../../models/Consumer";
 import { SecondaryUserAccessMethodType } from "../../models/subdocuments/SecondaryAccessMethod";
 import { templates } from "../email/models/Template";
 import sendTemplateEmail from "../email/sendMails";
+import { emailBrandingOf } from "../email/branding";
 import { setOneTimeCode } from "../security/oneTimeCode";
 import { randomSixDigitCode } from "../../utils/random";
 
@@ -22,11 +23,8 @@ export const sendLoginMFACode = async (user: IConsumer, appClient: IAppClient) =
 
   await sendTemplateEmail(templates.loginByCodeMFA.id, {
     recipient: { email: user.email, fullName: `${user.firstName} ${user.lastName}` },
-    appClientBranding: {
-      appName: appClient.branding!.appName,
-      primaryColor: appClient.branding!.primaryColor,
-      logoUrl: appClient.branding!.logoUrl,
-    },
+    branding: emailBrandingOf(appClient),
     variable: code,
+    expiresInMs,
   });
 };
