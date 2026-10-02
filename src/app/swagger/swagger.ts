@@ -63,8 +63,20 @@ const swaggerOptions = {
         },
         ConsumerDeleteAccount: {
           type: "object",
-          properties: { password: { type: "string" } },
-          required: ["password"],
+          description:
+            "password pour un compte classique, confirmEmail pour un compte Google sans mot de passe",
+          properties: { password: { type: "string" }, confirmEmail: { type: "string" } },
+        },
+        TenantUpdateProfile: {
+          type: "object",
+          properties: { firstName: { type: "string" }, lastName: { type: "string" } },
+          required: ["firstName", "lastName"],
+        },
+        ConsumerStatusUpdate: {
+          type: "object",
+          description: "false bloque le consumer, true le débloque",
+          properties: { isActive: { type: "boolean" } },
+          required: ["isActive"],
         },
         TenantDeleteAccount: {
           type: "object",
@@ -189,6 +201,11 @@ const swaggerOptions = {
           },
           required: ["token"],
         },
+        GoogleLogin: {
+          type: "object",
+          properties: { token: { type: "string", description: "ID token Google (credential)" } },
+          required: ["token"],
+        },
         TenantMFALogin: {
           type: "object",
           properties: {
@@ -214,6 +231,34 @@ const swaggerOptions = {
             supportEmail: { type: "string" },
             logoUrl: { type: "string" },
             primaryColor: { type: "string" },
+            googleClientId: {
+              type: "string",
+              description: "Client ID OAuth Google : active la connexion Google des consumers",
+              example: "1234-abcd.apps.googleusercontent.com",
+            },
+            emailVerificationMode: {
+              type: "string",
+              enum: ["code", "link"],
+              default: "code",
+              description: "Vérification d'e-mail des consumers : code à 6 chiffres ou lien",
+            },
+            passwordResetMode: {
+              type: "string",
+              enum: ["code", "link"],
+              default: "code",
+              description:
+                "Mot de passe oublié : code, ou lien vers resetPasswordUrl?token=…&email=…",
+            },
+            emailVerifiedUrl: {
+              type: "string",
+              description:
+                "Redirection après un lien de vérification réussi (obligatoire en mode lien)",
+            },
+            emailVerificationFailedUrl: {
+              type: "string",
+              description:
+                "Redirection après un lien invalide ou expiré, avec ?reason=expired|invalid",
+            },
           },
           required: ["tenantId", "name", "redirectUrl", "resetPasswordUrl", "supportEmail"],
         },
@@ -221,6 +266,29 @@ const swaggerOptions = {
           type: "object",
           properties: {
             isActive: { type: "boolean" },
+            googleClientId: {
+              type: "string",
+              nullable: true,
+              description: "Client ID OAuth Google ; null désactive la connexion Google",
+            },
+            name: { type: "string", description: "Nom de l'application, affiché dans ses e-mails" },
+            logoUrl: { type: "string", nullable: true, description: "null retire le logo" },
+            primaryColor: {
+              type: "string",
+              nullable: true,
+              example: "#2563EB",
+              description: "null revient à la couleur par défaut",
+            },
+            supportEmail: { type: "string" },
+            redirectUrl: { type: "string" },
+            resetPasswordUrl: { type: "string" },
+            logoutUrl: { type: "string", nullable: true },
+            emailVerifiedUrl: { type: "string", nullable: true },
+            emailVerificationFailedUrl: { type: "string", nullable: true },
+            emailVerificationMode: { type: "string", enum: ["code", "link"] },
+            passwordResetMode: { type: "string", enum: ["code", "link"] },
+            mfaVerificationMode: { type: "string", enum: ["code", "link"] },
+            requireEmailVerification: { type: "boolean" },
           },
           required: [],
         },

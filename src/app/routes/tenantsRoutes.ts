@@ -7,6 +7,8 @@ import { requireScope } from "../../middleware/security/requireScope";
 import { authRateLimiter } from "../../middleware/security/rateLimiter";
 import getConsumersQuery from "../../handlers/queries/tenants/getConsumersQuery";
 import getConsumerByIdQuery from "../../handlers/queries/tenants/getConsumerByIdQuery";
+import updateConsumerStatusHandler from "../../handlers/commands/tenants/updateConsumerStatusHandler";
+import { updateConsumerStatusSchema } from "../../validation/users/updateConsumerStatusSchema";
 import { registerSchema } from "../../validation/users/registerSchema";
 import registerHandler from "../../handlers/commands/tenants/registerHandler";
 import validate from "../../middleware/validation/validateSchema";
@@ -34,6 +36,8 @@ import {
 import deleteConsumerHandler from "../../handlers/commands/tenants/deleteConsumerHandler";
 import deleteAccountHandler from "../../handlers/commands/tenants/deleteAccountHandler";
 import { deleteTenantAccountSchema } from "../../validation/users/deleteAccountSchema";
+import updateProfileHandler from "../../handlers/commands/tenants/updateProfileHandler";
+import { updateTenantProfileSchema } from "../../validation/users/updateTenantProfileSchema";
 
 const tenantsRoutes = Router();
 
@@ -404,6 +408,53 @@ tenantsRoutes.post(
 /**
  * @swagger
  * /tenants/{tenantId}/app/{appId}/consumers/{consumerId}:
+ *   patch:
+ *     summary: Bloque ou débloque un consumer (bloquer ferme toutes ses sessions)
+ *     tags: [Tenants Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: appId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: consumerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ConsumerStatusUpdate'
+ *     responses:
+ *       200:
+ *         description: Statut mis à jour, consumer renvoyé dans data
+ *       404:
+ *         description: Consumer introuvable
+ */
+tenantsRoutes.patch(
+  "/:tenantId/app/:appId/consumers/:consumerId",
+  validate(updateConsumerStatusSchema),
+  tenantProtectedActionsAuthToken,
+  requireScope("consumer:update"),
+  asyncHandler(updateConsumerStatusHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}/app/{appId}/consumers/{consumerId}:
  *   delete:
  *     summary: Supprime un consumer d'une application du tenant et ses données
  *     tags: [Tenants Authentication]
@@ -476,6 +527,42 @@ tenantsRoutes.delete(
   validate(deleteTenantAccountSchema),
   tenantProtectedActionsAuthToken,
   asyncHandler(deleteAccountHandler)
+);
+
+/**
+ * @swagger
+ * /tenants/{tenantId}:
+ *   put:
+ *     summary: Modifie le profil (prénom, nom) du tenant connecté
+ *     tags: [Tenants Authentication]
+ *     parameters:
+ *       - in: header
+ *         name: X-Tenant-Id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/TenantUpdateProfile'
+ *     responses:
+ *       200:
+ *         description: Profil mis à jour
+ *       403:
+ *         description: Profil d'un autre tenant
+ */
+tenantsRoutes.put(
+  "/:tenantId",
+  validate(updateTenantProfileSchema),
+  tenantProtectedActionsAuthToken,
+  asyncHandler(updateProfileHandler)
 );
 
 export default tenantsRoutes;

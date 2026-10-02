@@ -3,6 +3,7 @@ import { createError } from "../../../middleware/error/errorHandler";
 import { Tenant } from "../../../models/Tenant";
 import { SecondaryUserAccessMethodType } from "../../../models/subdocuments/SecondaryAccessMethod";
 import { hash } from "../../../services/hashing/hash";
+import { sendPasswordChangedAlert } from "../../../services/email/sendPasswordChangedAlert";
 import { consumeOneTimeCode } from "../../../services/security/oneTimeCode";
 import { revokeAllRefreshTokens } from "../../../services/token/tokenService";
 
@@ -24,6 +25,7 @@ const resetPasswordHandler = async (request: Request, response: Response, next: 
 
     // Le mot de passe a pu fuiter : toutes les sessions existantes sont fermées.
     await revokeAllRefreshTokens("tenant", tenant.id);
+    await sendPasswordChangedAlert(tenant);
 
     response.status(201).json({ message: "Password has been reset", isSuccess: true });
   } catch (error) {

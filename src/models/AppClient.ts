@@ -28,6 +28,9 @@ const MFASettingsSchema = new Schema<MFASettings>({
   expiryMinutes: { type: Number, default: 15 },
 });
 
+/** Vérification d'e-mail et mot de passe oublié : code à 6 chiffres ou lien. */
+export type VerificationMode = "code" | "link";
+
 export interface IAppClient extends Document {
   id: string;
   tenantId: string;
@@ -41,9 +44,16 @@ export interface IAppClient extends Document {
   mfaSettings?: MFASettings;
   isActive: boolean;
   allowedOrigins?: string[];
+  // Client ID OAuth Google de l'application : active /consumers/auth/google.
+  googleClientId?: string;
   redirectUrl: string;
   logoutUrl?: string;
   resetPasswordUrl: string;
+  emailVerificationMode: VerificationMode;
+  passwordResetMode: VerificationMode;
+  // Redirections après un lien de vérification d'e-mail (obligatoires en mode lien).
+  emailVerifiedUrl?: string;
+  emailVerificationFailedUrl?: string;
   branding?: AppClientBranding;
   scopes?: string[];
   createdAt: Date;
@@ -69,10 +79,15 @@ const AppClientSchema = new Schema<IAppClient>({
   requireEmailVerification: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
   allowedOrigins: { type: [String], default: [] },
+  googleClientId: { type: String, required: false },
   mfaSettings: { type: MFASettingsSchema, default: {} },
   redirectUrl: { type: String, required: true },
   logoutUrl: { type: String, required: false },
   resetPasswordUrl: { type: String, required: true },
+  emailVerificationMode: { type: String, enum: ["code", "link"], default: "code" },
+  passwordResetMode: { type: String, enum: ["code", "link"], default: "code" },
+  emailVerifiedUrl: { type: String, required: false },
+  emailVerificationFailedUrl: { type: String, required: false },
   branding: { type: AppClientBrandingSchema, default: {} },
   scopes: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now },

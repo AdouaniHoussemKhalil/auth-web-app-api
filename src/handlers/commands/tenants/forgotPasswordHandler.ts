@@ -26,6 +26,7 @@ const forgotPasswordHandler = async (request: Request, response: Response, next:
       await sendTemplateEmail(templates.forgotPassword.id, {
         recipient: { email: tenant.email, fullName: `${tenant.firstName} ${tenant.lastName}` },
         variable: resetCode,
+        expiresInMs: RESET_CODE_EXPIRATION_MS,
       });
     }
 

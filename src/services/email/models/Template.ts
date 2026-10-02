@@ -1,157 +1,212 @@
-export interface EmailBaseProps {
-  recipientFullName: string;
-  primaryColor: string;
-  variable?: string;
-  logoUrl?: string;
+import { EmailContent } from "../layout";
+
+/** Données propres à un envoi. */
+export interface TemplateContext {
+  appName: string;
+  /** Code à usage unique ou lien de vérification. */
+  variable: string;
+  /** Durée de validité lisible (« 15 minutes »), si le code ou le lien expire. */
+  expiresIn?: string;
 }
 
-const renderBaseTemplate = (content: string, props: EmailBaseProps) => `
-  <div style="background-color: ${props.primaryColor}; padding: 20px; border-radius: 5px;">
-    <img src="${
-      props.logoUrl || "https://cdn.pixabay.com/photo/2017/04/10/12/18/castle-2218358_1280.jpg"
-    }" alt="Logo" style="width: 100px; margin-bottom: 20px;">
-    <h3>Bonjour ${props.recipientFullName},</h3>
-    ${content}
-  </div>
-`;
+const expiry = (what: string, expiresIn?: string) =>
+  expiresIn ? `${what} expire dans ${expiresIn}.` : undefined;
 
+const NOT_YOU = "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail.";
+
+// Contenu de chaque e-mail ; la mise en forme (couleurs, logo, pied de page) est commune : voir layout.ts.
+// Textes en français ; `id` est aussi la clé du réglage d'activation par application (branding.templates).
 export const templates = {
   emailVerification: {
     id: "emailVerification",
-    subject: "Vérification de votre adresse e-mail",
-    getHtml: ({ recipientFullName, primaryColor, logoUrl, variable }: EmailBaseProps) =>
-      renderBaseTemplate(
-        `
-        <p>Merci pour votre inscription.</p>
-        <p>Pour confirmer votre adresse e-mail, veuillez saisir le code ci-dessous :</p>
-        <p style="font-size: 18px; font-weight: bold;">
-          Code de vérification : <strong>${variable}</strong>
-        </p>
-        <p>Ce code expirera dans 24 heures.</p>
-      `,
-        { recipientFullName, primaryColor, logoUrl, variable }
-      ),
+    content: ({ appName, variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: `Votre code de vérification ${appName}`,
+      preheader: `Votre code : ${variable}`,
+      title: "Confirmez votre adresse e-mail",
+      paragraphs: [
+        `Merci pour votre inscription sur ${appName}. Saisissez ce code pour confirmer votre adresse :`,
+      ],
+      code: variable,
+      expiry: expiry("Ce code", expiresIn),
+      notice: "Si vous n'avez pas créé de compte, vous pouvez ignorer cet e-mail.",
+    }),
+  },
+
+  emailVerificationLink: {
+    id: "emailVerificationLink",
+    content: ({ appName, variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: `Confirmez votre adresse e-mail ${appName}`,
+      preheader: "Un clic pour confirmer votre adresse e-mail.",
+      title: "Confirmez votre adresse e-mail",
+      paragraphs: [
+        `Merci pour votre inscription sur ${appName}. Confirmez votre adresse en un clic :`,
+      ],
+      button: { label: "Confirmer mon adresse", url: variable },
+      expiry: expiry("Ce lien", expiresIn),
+      notice: "Si vous n'avez pas créé de compte, vous pouvez ignorer cet e-mail.",
+    }),
+  },
+
+  forgotPasswordLink: {
+    id: "forgotPasswordLink",
+    content: ({ appName, variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: `Réinitialisation de votre mot de passe ${appName}`,
+      preheader: "Choisissez un nouveau mot de passe.",
+      title: "Réinitialisez votre mot de passe",
+      paragraphs: [
+        "Vous avez demandé à réinitialiser votre mot de passe. Choisissez-en un nouveau :",
+      ],
+      button: { label: "Choisir un nouveau mot de passe", url: variable },
+      expiry: expiry("Ce lien", expiresIn),
+      notice: `${NOT_YOU} Votre mot de passe actuel reste valable.`,
+    }),
   },
 
   forgotPassword: {
     id: "forgotPassword",
-    subject: "Réinitialisation de votre mot de passe",
-    getHtml: ({ recipientFullName, primaryColor, logoUrl, variable }: EmailBaseProps) =>
-      renderBaseTemplate(
-        `
-        <p>Vous avez demandé à réinitialiser votre mot de passe.</p>
-        <p>Utilisez le code suivant pour confirmer votre demande :</p>
-        <p style="font-size: 18px; font-weight: bold;">
-          Code de confirmation : <strong>${variable}</strong>
-        </p>
-        <p>Ce code expirera dans quelques minutes.</p>
-        <p>Si vous n’êtes pas à l’origine de cette demande, ignorez cet e-mail.</p>
-      `,
-        { recipientFullName, primaryColor, logoUrl, variable }
-      ),
+    content: ({ appName, variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: `Réinitialisation de votre mot de passe ${appName}`,
+      preheader: `Votre code de réinitialisation : ${variable}`,
+      title: "Réinitialisez votre mot de passe",
+      paragraphs: [
+        "Vous avez demandé à réinitialiser votre mot de passe. Saisissez ce code pour continuer :",
+      ],
+      code: variable,
+      expiry: expiry("Ce code", expiresIn),
+      notice: `${NOT_YOU} Votre mot de passe actuel reste valable.`,
+    }),
   },
 
   loginByCodeMFA: {
     id: "loginByCodeMFA",
-    subject: "Connexion par code - Authentification à deux facteurs",
-    getHtml: ({
-      recipientFullName,
-      primaryColor,
-      logoUrl,
-      variable,
-    }: EmailBaseProps & { variable: string }) =>
-      renderBaseTemplate(
-        `
-        <p>Pour finaliser votre connexion, veuillez saisir le code ci-dessous :</p>
-        <p style="font-size: 18px; font-weight: bold;">
-          Code de connexion : <strong>${variable}</strong>
-        </p>
-        <p>Ce code expirera dans quelques minutes.</p>
-      `,
-        { recipientFullName, primaryColor, logoUrl, variable }
-      ),
+    content: ({ appName, variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: `Votre code de connexion ${appName}`,
+      preheader: `Votre code de connexion : ${variable}`,
+      title: "Votre code de connexion",
+      paragraphs: [`Pour terminer votre connexion à ${appName}, saisissez ce code :`],
+      code: variable,
+      expiry: expiry("Ce code", expiresIn),
+      notice:
+        "Vous n'essayez pas de vous connecter ? Quelqu'un connaît peut-être votre mot de passe : changez-le dès que possible.",
+    }),
   },
 
   activateMFA: {
     id: "activateMFA",
-    subject: "Activation de la vérification en deux étapes",
-    getHtml: ({ recipientFullName, primaryColor, logoUrl, variable }: EmailBaseProps) =>
-      renderBaseTemplate(
-        `
-        <p>Pour activer la vérification en deux étapes (MFA), veuillez saisir le code ci-dessous :</p>
-        <p style="font-size: 18px; font-weight: bold;">
-          Code de vérification : <strong>${variable}</strong>
-        </p>
-      `,
-        { recipientFullName, primaryColor, logoUrl, variable }
-      ),
+    content: ({ variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: "Activez la vérification en deux étapes",
+      preheader: `Votre code d'activation : ${variable}`,
+      title: "Activez la vérification en deux étapes",
+      paragraphs: [
+        "Avec la vérification en deux étapes, un code vous sera demandé par e-mail à chaque connexion. Saisissez ce code pour l'activer :",
+      ],
+      code: variable,
+      expiry: expiry("Ce code", expiresIn),
+      notice: NOT_YOU,
+    }),
   },
 
   deactivateMFA: {
     id: "deactivateMFA",
-    subject: "Désactivation de la vérification en deux étapes",
-    getHtml: ({ recipientFullName, primaryColor, logoUrl, variable }: EmailBaseProps) =>
-      renderBaseTemplate(
-        `
-        <p>Pour désactiver la vérification en deux étapes (MFA), veuillez saisir le code ci-dessous :</p>
-        <p style="font-size: 18px; font-weight: bold;">
-          Code de vérification : <strong>${variable}</strong>
-        </p>
-      `,
-        { recipientFullName, primaryColor, logoUrl, variable }
-      ),
+    content: ({ variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: "Désactivez la vérification en deux étapes",
+      preheader: `Votre code de désactivation : ${variable}`,
+      title: "Désactivez la vérification en deux étapes",
+      paragraphs: ["Saisissez ce code pour désactiver la vérification en deux étapes :"],
+      code: variable,
+      expiry: expiry("Ce code", expiresIn),
+      notice: `${NOT_YOU} Sans ce code, la vérification en deux étapes reste active.`,
+    }),
   },
 
   mfaActivationRequest: {
     id: "mfaActivationRequest",
-    subject: "Demande d'activation de la vérification en deux étapes",
-    getHtml: (props: EmailBaseProps) =>
-      renderBaseTemplate(
-        `<p>Pour activer la vérification en deux étapes (MFA), veuillez cliquer sur le lien ci-dessous :</p>
-        <p style="font-size: 18px; font-weight: bold;">
-          Lien d'activation : <a href="${props.variable}"><strong>Activer MFA</strong></a>
-        </p>`,
-        props
-      ),
+    content: ({ variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: "Activez la vérification en deux étapes",
+      preheader: "Confirmez l'activation de la vérification en deux étapes.",
+      title: "Activez la vérification en deux étapes",
+      paragraphs: [
+        "Avec la vérification en deux étapes, un code vous sera demandé par e-mail à chaque connexion. Confirmez l'activation :",
+      ],
+      button: { label: "Activer la vérification", url: variable },
+      expiry: expiry("Ce lien", expiresIn),
+      notice: NOT_YOU,
+    }),
   },
 
   mfaDeactivationRequest: {
     id: "mfaDeactivationRequest",
-    subject: "Demande de désactivation de la vérification en deux étapes",
-    getHtml: (props: EmailBaseProps) =>
-      renderBaseTemplate(
-        `<p>Pour désactiver la vérification en deux étapes (MFA), veuillez cliquer sur le lien ci-dessous :</p>
-        <p style="font-size: 18px; font-weight: bold;">
-          Lien de désactivation : <a href="${props.variable}"><strong>Désactiver MFA</strong></a>
-        </p>`,
-        props
-      ),
+    content: ({ variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: "Désactivez la vérification en deux étapes",
+      preheader: "Confirmez la désactivation de la vérification en deux étapes.",
+      title: "Désactivez la vérification en deux étapes",
+      paragraphs: ["Confirmez la désactivation de la vérification en deux étapes :"],
+      button: { label: "Désactiver la vérification", url: variable },
+      expiry: expiry("Ce lien", expiresIn),
+      notice: `${NOT_YOU} Sans confirmation, la vérification en deux étapes reste active.`,
+    }),
+  },
+
+  passwordChanged: {
+    id: "passwordChanged",
+    content: ({ appName }: TemplateContext): EmailContent => ({
+      subject: `Votre mot de passe ${appName} a été modifié`,
+      preheader: "Le mot de passe de votre compte vient d'être modifié.",
+      title: "Mot de passe modifié",
+      paragraphs: [
+        `Le mot de passe de votre compte ${appName} vient d'être modifié.`,
+        "Par sécurité, vos autres sessions ont été fermées : reconnectez-vous sur vos autres appareils.",
+      ],
+      notice:
+        "Ce n'est pas vous ? Réinitialisez immédiatement votre mot de passe avec « Mot de passe oublié » et contactez le support.",
+    }),
   },
 
   successfullyActivatedMFA: {
     id: "successfullyActivatedMFA",
-    subject: "Vérification en deux étapes activée",
-    getHtml: (props: EmailBaseProps) =>
-      renderBaseTemplate(
-        `<b>Félicitations ! Votre vérification en deux étapes (MFA) a été activée avec succès.</b>
-        <p>Vous pouvez maintenant vous connecter en toute sécurité.</p>
-        <p>Pour votre prochaine connexion, veuillez utiliser le code de vérification envoyé à votre adresse e-mail.</p>
-        `,
-        props
-      ),
+    content: ({ appName }: TemplateContext): EmailContent => ({
+      subject: "Vérification en deux étapes activée",
+      preheader: "Votre compte est mieux protégé.",
+      title: "Vérification en deux étapes activée",
+      paragraphs: [
+        `Votre compte ${appName} est maintenant mieux protégé.`,
+        "À chaque connexion, un code vous sera envoyé à cette adresse e-mail.",
+      ],
+      notice:
+        "Vous n'avez pas fait cette modification ? Changez votre mot de passe et contactez le support.",
+    }),
   },
 
   successfullyDeactivatedMFA: {
     id: "successfullyDeactivatedMFA",
-    subject: "Vérification en deux étapes désactivée",
-    getHtml: (props: EmailBaseProps) =>
-      renderBaseTemplate(
-        `<b>Votre vérification en deux étapes (MFA) a été désactivée avec succès.</b>
-        <p>La vérification en deux étapes (MFA) renforce la sécurité de votre compte.</p>
-        <p>Essayez de l'activer à nouveau si nécessaire.</p>
-        `,
-        props
-      ),
+    content: ({ appName }: TemplateContext): EmailContent => ({
+      subject: "Vérification en deux étapes désactivée",
+      preheader: "La vérification en deux étapes est désactivée.",
+      title: "Vérification en deux étapes désactivée",
+      paragraphs: [
+        `La vérification en deux étapes est désactivée sur votre compte ${appName}.`,
+        "Nous vous recommandons de la réactiver : elle protège votre compte même si votre mot de passe est connu.",
+      ],
+      notice:
+        "Vous n'avez pas fait cette modification ? Changez votre mot de passe et réactivez la vérification.",
+    }),
+  },
+
+  // Envoyé au tenant depuis le dashboard, pour vérifier l'apparence des e-mails d'une application.
+  testEmail: {
+    id: "testEmail",
+    content: ({ appName, variable, expiresIn }: TemplateContext): EmailContent => ({
+      subject: `[Test] Aperçu des e-mails ${appName}`,
+      preheader: `Voici l'apparence des e-mails envoyés aux utilisateurs de ${appName}.`,
+      title: "Aperçu de vos e-mails",
+      paragraphs: [
+        `Voici l'apparence des e-mails envoyés aux utilisateurs de ${appName} : logo, couleur principale et e-mail de support.`,
+        "Exemple de code à usage unique :",
+      ],
+      code: variable,
+      expiry: expiry("Dans un vrai e-mail, ce code", expiresIn),
+      notice: "Cet e-mail de test a été envoyé depuis le dashboard. Aucun compte n'a été modifié.",
+    }),
   },
 } as const;
 

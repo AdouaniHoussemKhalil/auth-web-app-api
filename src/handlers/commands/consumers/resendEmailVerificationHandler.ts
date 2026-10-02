@@ -12,13 +12,15 @@ const resendEmailVerificationHandler = async (
     const appClient = (request as any).appClient;
     const { email } = request.body;
 
-    const user = await Consumer.findOne({ email, clientId: appClient.id });
+    const user = await Consumer.findOne({ email, clientId: appClient.id, isActive: true });
     if (user && !user.isEmailVerified) {
       await sendEmailVerification(user, appClient);
     }
 
     response.status(200).json({
       message: "If this email needs verification, a new code has been sent",
+      // Réglage de l'application : identique que le compte existe ou non.
+      emailVerificationMode: appClient.emailVerificationMode ?? "code",
       isSuccess: true,
     });
   } catch (error) {
